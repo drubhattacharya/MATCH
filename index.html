@@ -3,25 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CHNA–CRA Navigation Dashboard (Disparities, Access, Performance)</title>
+  <title>CHNA–CRA Navigation Dashboard</title>
 
   <!-- Dependencies (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
+    /* LAI-like: deep navy, clean panels, strong accents */
     :root{
-      --bg:#0b1020;
-      --panel:#101a33;
-      --panel2:#0f1730;
-      --text:#e8eefc;
-      --muted:#a9b6d6;
-      --accent:#6aa7ff;
-      --good:#2bd4a6;
-      --warn:#ffcc66;
-      --bad:#ff6a8b;
+      --bg:#061021;
+      --panel:#0b1a33;
+      --panel2:#0a162c;
+      --card:#0d2242;
+      --text:#eaf1ff;
+      --muted:#a9b8db;
+
+      --accent:#5aa6ff;   /* LAI-like blue */
+      --accent2:#2dd4bf;  /* teal */
+      --warn:#f5c451;     /* gold */
+      --bad:#ff5f7a;      /* rose */
+
       --border:rgba(255,255,255,.10);
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --border2:rgba(90,166,255,.22);
+      --shadow: 0 10px 30px rgba(0,0,0,.40);
       --radius:16px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
@@ -30,37 +35,56 @@
     body{
       margin:0;
       font-family:var(--sans);
-      background: radial-gradient(1000px 700px at 10% 0%, rgba(106,167,255,.18), transparent 60%),
-                  radial-gradient(900px 650px at 90% 10%, rgba(43,212,166,.14), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(900px 700px at 10% 0%, rgba(90,166,255,.18), transparent 60%),
+        radial-gradient(800px 600px at 90% 10%, rgba(45,212,191,.12), transparent 55%),
+        radial-gradient(900px 700px at 50% 100%, rgba(245,196,81,.08), transparent 60%),
+        var(--bg);
       color:var(--text);
     }
     header{
-      padding:28px 22px 10px;
-      max-width:1240px;
+      max-width:1280px;
       margin:0 auto;
+      padding:22px 22px 6px;
     }
     h1{
-      margin:0 0 6px;
-      font-size:24px;
+      margin:0 0 8px;
+      font-size:22px;
       letter-spacing:.2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .tag{
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--border2);
+      background:rgba(90,166,255,.10);
+      color:#cfe3ff;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
     }
     .subtitle{
+      margin:0 0 10px;
       color:var(--muted);
-      margin:0;
-      line-height:1.35;
-      max-width:1000px;
+      line-height:1.45;
+      max-width:1060px;
+      font-size:13px;
     }
+
     .wrap{
-      max-width:1240px;
+      max-width:1280px;
       margin:0 auto;
-      padding:16px 22px 40px;
+      padding:12px 22px 38px;
       display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:16px;
+      grid-template-columns: 380px 1fr;
+      gap:14px;
     }
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
       border:1px solid var(--border);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
@@ -68,105 +92,142 @@
     .left{
       padding:14px;
       position:sticky;
-      top:16px;
-      height:calc(100vh - 32px);
+      top:14px;
+      height:calc(100vh - 28px);
       overflow:auto;
     }
     .right{
       padding:14px;
-      min-height:720px;
+      min-height:760px;
     }
     .sectionTitle{
-      font-size:13px;
+      font-size:12px;
       text-transform:uppercase;
       letter-spacing:.14em;
       color:var(--muted);
-      margin:8px 6px 10px;
+      margin:10px 6px 10px;
     }
+
     .uploader{
       padding:12px;
-      background:rgba(255,255,255,.03);
+      background:rgba(0,0,0,.18);
       border:1px dashed rgba(255,255,255,.18);
       border-radius:12px;
-      margin-bottom:12px;
     }
     .uploader input{width:100%}
     .small{
       font-size:12px;
       color:var(--muted);
-      line-height:1.35;
+      line-height:1.45;
       margin-top:8px;
     }
-    .btnRow{
-      display:flex;
-      gap:8px;
-      margin-top:10px;
-      flex-wrap:wrap;
-    }
+
+    .btnRow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
     button{
       border:1px solid var(--border);
-      background:rgba(255,255,255,.05);
+      background:rgba(0,0,0,.18);
       color:var(--text);
       padding:10px 10px;
       border-radius:12px;
       cursor:pointer;
-      font-weight:600;
+      font-weight:800;
+      letter-spacing:.2px;
       transition:.15s;
     }
-    button:hover{background:rgba(255,255,255,.09)}
+    button:hover{background:rgba(255,255,255,.08)}
     button.primary{
-      border-color: rgba(106,167,255,.45);
-      background: rgba(106,167,255,.12);
+      border-color: rgba(90,166,255,.45);
+      background: rgba(90,166,255,.12);
     }
-    button.primary:hover{background:rgba(106,167,255,.18)}
+    button.primary:hover{background:rgba(90,166,255,.18)}
+    button.secondary{
+      border-color: rgba(45,212,191,.35);
+      background: rgba(45,212,191,.10);
+    }
+    button.secondary:hover{background:rgba(45,212,191,.15)}
     button.danger{
-      border-color: rgba(255,106,139,.35);
-      background: rgba(255,106,139,.10);
+      border-color: rgba(255,95,122,.35);
+      background: rgba(255,95,122,.10);
     }
+
     .pill{
-      display:inline-flex;
-      gap:8px;
+      display:flex;
+      gap:10px;
       align-items:center;
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
+      padding:8px 10px;
       border:1px solid var(--border);
+      border-radius:14px;
       background:rgba(0,0,0,.18);
+      margin:6px 0;
+      font-size:12px;
       color:var(--muted);
-      margin:4px 6px 0;
-      user-select:none;
     }
-    .dot{
-      width:8px;height:8px;border-radius:999px;background:var(--warn);
-      box-shadow:0 0 0 3px rgba(255,204,102,.15);
+    .dot{width:9px;height:9px;border-radius:999px;background:var(--warn);box-shadow:0 0 0 3px rgba(245,196,81,.14);}
+    .dot.good{background:var(--accent2); box-shadow:0 0 0 3px rgba(45,212,191,.14);}
+    .dot.bad{background:var(--bad); box-shadow:0 0 0 3px rgba(255,95,122,.14);}
+    .mono{font-family:var(--mono)}
+    .log{
+      max-height:250px;
+      overflow:auto;
+      font-family:var(--mono);
+      font-size:11.5px;
+      background:rgba(0,0,0,.22);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      white-space:pre-wrap;
     }
-    .dot.good{background:var(--good); box-shadow:0 0 0 3px rgba(43,212,166,.14);}
-    .dot.bad{background:var(--bad); box-shadow:0 0 0 3px rgba(255,106,139,.14);}
+    .note{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(90,166,255,.22);
+      background:rgba(90,166,255,.10);
+      color:#d7e8ff;
+      font-size:12.5px;
+      line-height:1.45;
+    }
+
     .tabs{
       display:flex;
       gap:8px;
       padding:10px;
       border-radius:14px;
-      background:rgba(255,255,255,.03);
+      background:rgba(0,0,0,.18);
       border:1px solid var(--border);
       margin-bottom:12px;
       flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
     }
+    .tabsLeft{display:flex; gap:8px; flex-wrap:wrap;}
     .tab{
       padding:10px 12px;
       border-radius:12px;
       border:1px solid transparent;
       color:var(--muted);
       cursor:pointer;
-      font-weight:700;
+      font-weight:900;
       transition:.15s;
       user-select:none;
+      font-size:13px;
     }
     .tab.active{
       color:var(--text);
-      border-color: rgba(106,167,255,.35);
-      background: rgba(106,167,255,.10);
+      border-color: rgba(90,166,255,.35);
+      background: rgba(90,166,255,.12);
     }
+    .gate{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+    }
+
     .grid{
       display:grid;
       grid-template-columns: repeat(12, 1fr);
@@ -176,52 +237,65 @@
       grid-column: span 4;
       padding:12px;
       border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
+      background:linear-gradient(180deg, rgba(13,34,66,.55), rgba(0,0,0,.18));
     }
     .kpi .label{
-      font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.10em;
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.10em;
+      font-weight:800;
     }
     .kpi .value{
       margin-top:6px;
       font-size:22px;
-      font-weight:800;
+      font-weight:950;
       letter-spacing:.2px;
     }
     .kpi .hint{
       margin-top:6px;
       font-size:12px;
       color:var(--muted);
-      line-height:1.35;
+      line-height:1.45;
     }
     .panel{
       grid-column: span 12;
       padding:12px;
       border-radius:14px;
-      border:1px solid var(--border);
+      border:1px solid rgba(255,255,255,.10);
       background:rgba(0,0,0,.18);
     }
     .panel h2{
       font-size:16px;
-      margin:0 0 8px;
+      margin:0 0 6px;
+      display:flex;
+      align-items:center;
+      gap:10px;
     }
     .panel .sub{
       color:var(--muted);
       margin:0 0 12px;
       font-size:12.5px;
-      line-height:1.45;
+      line-height:1.55;
+      max-width:1100px;
     }
-    .twoCol{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:12px;
+    .chip{
+      font-size:11px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-weight:800;
     }
+
     .table{
       width:100%;
       border-collapse:collapse;
-      overflow:hidden;
       border-radius:12px;
-      border:1px solid var(--border);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
     }
     .table th, .table td{
       padding:10px 10px;
@@ -231,35 +305,31 @@
     }
     .table th{
       text-align:left;
-      color:var(--muted);
-      font-size:12px;
+      color:#cbd9ff;
+      font-size:11px;
       text-transform:uppercase;
-      letter-spacing:.08em;
-      background:rgba(255,255,255,.03);
+      letter-spacing:.09em;
+      background:rgba(90,166,255,.10);
+      border-bottom:1px solid rgba(90,166,255,.16);
     }
     .table tr:last-child td{border-bottom:none}
-    .mono{font-family:var(--mono)}
-    .codebox{
-      background:rgba(0,0,0,.22);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:10px;
-      font-family:var(--mono);
-      font-size:12px;
-      color:#dfe7ff;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
     .badge{
       display:inline-block;
       padding:4px 8px;
       border-radius:999px;
-      border:1px solid var(--border);
+      border:1px solid rgba(255,255,255,.12);
       font-size:11px;
-      color:var(--muted);
-      background:rgba(255,255,255,.04);
-      margin-left:8px;
+      font-weight:900;
+      letter-spacing:.06em;
+      text-transform:uppercase;
     }
+    .b-strong{background:rgba(45,212,191,.12); border-color:rgba(45,212,191,.25); color:#bff6ee;}
+    .b-mod{background:rgba(245,196,81,.12); border-color:rgba(245,196,81,.25); color:#ffe3a6;}
+    .b-weak{background:rgba(255,95,122,.12); border-color:rgba(255,95,122,.25); color:#ffc0cb;}
+
+    .twoCol{display:grid; grid-template-columns: 1.25fr .75fr; gap:12px;}
+    .split{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+
     .inputs{
       display:grid;
       grid-template-columns: repeat(2, 1fr);
@@ -267,8 +337,8 @@
       margin-top:8px;
     }
     .field{
-      background:rgba(255,255,255,.03);
-      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
       border-radius:12px;
       padding:10px;
     }
@@ -279,48 +349,44 @@
       text-transform:uppercase;
       letter-spacing:.08em;
       margin-bottom:6px;
+      font-weight:900;
     }
     .field input, .field select{
       width:100%;
       padding:10px 10px;
       border-radius:10px;
       border:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.18);
+      background:rgba(0,0,0,.25);
       color:var(--text);
       outline:none;
+      font-weight:700;
     }
-    .field input:focus, .field select:focus{border-color: rgba(106,167,255,.55);}
-    .footerNote{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.4;
-    }
-    .split{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-    .log{
-      max-height:230px;
-      overflow:auto;
-      font-family:var(--mono);
-      font-size:11.5px;
-      background:rgba(0,0,0,.20);
-      border:1px solid var(--border);
+    .field input:focus, .field select:focus{border-color: rgba(90,166,255,.55);}
+
+    .codebox{
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.10);
       border-radius:12px;
       padding:10px;
+      font-family:var(--mono);
+      font-size:12px;
+      color:#dfe7ff;
       white-space:pre-wrap;
+      word-break:break-word;
+      line-height:1.45;
     }
-    .note{
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,204,102,.25);
-      background:rgba(255,204,102,.08);
-      color:#ffe5b3;
-      font-size:12.5px;
-      line-height:1.4;
+
+    .recommend{
+      background:linear-gradient(180deg, rgba(45,212,191,.10), rgba(0,0,0,.18));
+      border:1px solid rgba(45,212,191,.22);
+      border-radius:14px;
+      padding:12px;
     }
+    .recommend h3{margin:0 0 8px; font-size:14px;}
+    .recommend ul{margin:0; padding-left:18px;}
+    .recommend li{margin:6px 0; color:var(--muted); font-size:12.5px; line-height:1.45;}
+    .hr{height:1px; background:rgba(255,255,255,.08); margin:12px 0;}
+
     @media (max-width: 1100px){
       .wrap{grid-template-columns: 1fr}
       .left{position:relative; height:auto}
@@ -328,18 +394,19 @@
       .twoCol{grid-template-columns:1fr}
       .split{grid-template-columns:1fr}
     }
-    @media (max-width: 620px){
+    @media (max-width: 640px){
       .kpi{grid-column: span 12}
+      .inputs{grid-template-columns:1fr}
     }
   </style>
 </head>
 
 <body>
 <header>
-  <h1>CHNA–CRA Navigation Dashboard <span class="badge">Disparities • Access • Performance</span></h1>
+  <h1>CHNA–CRA Navigation Dashboard <span class="tag">Tiers 1–3</span> <span class="tag">Audit-Ready</span></h1>
   <p class="subtitle">
-    Upload CHNA and related documents to generate a structured view of disparities signals, CRA-aligned opportunities, and
-    advanced Tier 3 impact modeling with audit-ready outputs.
+    A disparities‑driven navigation dashboard designed for hospital administrators and bank officials to identify fundable activities,
+    build exam‑defensible CRA narratives, and quantify impact and program cost. All processing runs locally in your browser.
   </p>
 </header>
 
@@ -350,103 +417,133 @@
     <div class="uploader">
       <input id="fileInput" type="file" multiple accept=".pdf,.txt"/>
       <div class="small">
-        Recommended: CHNA (PDF), Schedule H (PDF), CRA Performance Evaluation (PDF), and any supporting memos (TXT).
-        PDFs are processed locally in your browser (no server required).
+        Recommended uploads: CHNA (PDF), Implementation Strategy (PDF), Schedule H (PDF),
+        CRA Performance Evaluation / Procedures (PDF), plus any internal memos (TXT).
       </div>
       <div class="btnRow">
         <button class="primary" id="btnProcess">Process Files</button>
-        <button id="btnDemo">Load Demo Data</button>
+        <button class="secondary" id="btnDemo">Load Robust Demo</button>
+        <button id="btnExport">Export Report (JSON)</button>
         <button class="danger" id="btnReset">Reset</button>
       </div>
     </div>
 
     <div class="sectionTitle">Status</div>
     <div class="pill"><span id="statusDot" class="dot"></span><span id="statusText">No documents processed</span></div>
-    <div class="pill"><span class="dot good"></span><span><span class="mono" id="docsCount">0</span> document(s)</span></div>
-    <div class="pill"><span class="dot"></span><span><span class="mono" id="evidenceCount">0</span> evidence snippets</span></div>
+    <div class="pill"><span class="dot good"></span><span><b class="mono" id="docsCount">0</b> document(s)</span></div>
+    <div class="pill"><span class="dot"></span><span><b class="mono" id="evidenceCount">0</b> evidence snippets</span></div>
+    <div class="pill"><span class="dot good"></span><span><b class="mono" id="tierGate">Locked</b> Tier 3 readiness</span></div>
 
     <div class="sectionTitle">Audit Trail</div>
     <div id="auditLog" class="log"></div>
 
-    <div class="sectionTitle">How to Use</div>
+    <div class="sectionTitle">What Makes This “Partnership-Grade”</div>
     <div class="note">
-      <b>Tier 1:</b> Disparities signal scan (from CHNA language and tables).<br/>
-      <b>Tier 2:</b> CHNA → CRA alignment crosswalk (eligibility + scope logic).<br/>
-      <b>Tier 3:</b> Impact modeling & ROI (auto-filled when possible), plus export-ready audit notes.
+      <b>Tier 1</b> prioritizes disparities using a materiality score (impact × concentration × prominence).<br/>
+      <b>Tier 2</b> scores CRA eligibility strength and application readiness (scope risk, evidence burden, exam prompts).<br/>
+      <b>Tier 3</b> models <b>total program cost</b> (startup + fixed + variable) and returns audit‑ready outputs.
     </div>
 
-    <div class="footerNote">
-      Tip: If a PDF is scanned (image-only), browser text extraction may be limited. In that case, upload a text version or a
-      non-scanned PDF for stronger Tier 3 automation.
+    <div class="small" style="margin-top:10px">
+      If a PDF is scanned (image-only), browser text extraction may be limited.
+      Upload a text version when possible for stronger Tier 1–2 automation.
     </div>
   </aside>
 
   <!-- RIGHT: Main dashboard -->
   <main class="card right">
     <div class="tabs">
-      <div class="tab active" data-tab="t1">Tier 1 — Signal Scan</div>
-      <div class="tab" data-tab="t2">Tier 2 — Alignment</div>
-      <div class="tab" data-tab="t3">Tier 3 — Modeling</div>
+      <div class="tabsLeft">
+        <div class="tab active" data-tab="t1">Tier 1 — Materiality</div>
+        <div class="tab" data-tab="t2">Tier 2 — CRA Readiness</div>
+        <div class="tab" data-tab="t3">Tier 3 — Cost & ROI</div>
+      </div>
+      <div class="gate"><span id="gateDot" class="dot"></span><span id="gateText">Tier 3 locked until Tier 2 scores ≥ 60</span></div>
     </div>
 
     <!-- Tier 1 -->
     <section id="t1" class="tabPane">
       <div class="grid">
         <div class="kpi">
-          <div class="label">Transportation barrier</div>
-          <div class="value" id="kpiTransport">—</div>
-          <div class="hint" id="hintTransport">Upload a CHNA to detect transportation-related percentages.</div>
+          <div class="label">Top disparity (by materiality)</div>
+          <div class="value" id="kpiTopDisparity">—</div>
+          <div class="hint" id="hintTopDisparity">Process documents to compute materiality scores.</div>
         </div>
         <div class="kpi">
-          <div class="label">Food insecurity</div>
-          <div class="value" id="kpiFood">—</div>
-          <div class="hint" id="hintFood">Detected from text like “food insecurity” and nearby % values.</div>
+          <div class="label">Highest subgroup concentration</div>
+          <div class="value" id="kpiTopConcentration">—</div>
+          <div class="hint" id="hintTopConcentration">Detected differences (e.g., age bands) will appear here.</div>
         </div>
         <div class="kpi">
-          <div class="label">Housing need</div>
-          <div class="value" id="kpiHousing">—</div>
-          <div class="hint" id="hintHousing">Detected from text like “housing needs” and nearby % values.</div>
+          <div class="label">Tier 1 priority set</div>
+          <div class="value" id="kpiPriorityCount">—</div>
+          <div class="hint" id="hintPriorityCount">Count of disparities recommended to advance to Tier 2.</div>
         </div>
 
         <div class="panel">
-          <h2>Disparities Signals (Extracted)</h2>
+          <h2>Disparities Materiality Matrix <span class="chip">Decision‑support</span></h2>
           <p class="sub">
-            The engine scans uploaded documents for disparities signals commonly used in CHNAs (access barriers, delayed care drivers,
-            and basic-needs indicators). Click Tier 2 to see how each signal can map to CRA-eligible activities.
+            This table converts CHNA findings into a prioritized shortlist. Materiality is computed from:
+            <b>Magnitude</b> (rate/percent), <b>Concentration</b> (subgroup differential when detected), and <b>Prominence</b> (how often the issue appears across documents/pages).
+            Outputs are built to support stakeholder alignment and exam defensibility.
           </p>
+
           <div class="twoCol">
             <div>
-              <table class="table" id="signalsTable">
+              <table class="table" id="materialityTable">
                 <thead>
                   <tr>
-                    <th>Signal</th>
-                    <th>Detected Value</th>
-                    <th>Population / Segment</th>
-                    <th>Source</th>
+                    <th>Disparity</th>
+                    <th>Metric</th>
+                    <th>Segment</th>
+                    <th>Magnitude</th>
+                    <th>Materiality</th>
+                    <th>Recommendation</th>
+                    <th>Evidence</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td colspan="4" class="small">No signals detected yet. Upload documents and click <b>Process Files</b>.</td></tr>
+                  <tr><td colspan="7" class="small">No materiality results yet. Upload documents and click <b>Process Files</b>.</td></tr>
                 </tbody>
               </table>
             </div>
             <div>
-              <canvas id="needsBar" height="220"></canvas>
+              <canvas id="materialityChart" height="220"></canvas>
               <div class="small" style="margin-top:10px">
-                Chart shows detected basic-needs percentages (when found). If the CHNA includes segmented tables (e.g., age bands),
-                the system will also attempt to detect and display those under Tier 3.
+                Chart ranks disparities by materiality (0–100). Use Tier 2 to assess CRA eligibility strength and application readiness.
+              </div>
+              <div class="hr"></div>
+              <div class="recommend">
+                <h3>Tier 1 Recommendations (What makes partners lean in)</h3>
+                <ul id="tier1Recs">
+                  <li>Prioritize disparities that are (a) measurable, (b) concentrated in a specific segment, and (c) likely to change with a fundable intervention.</li>
+                  <li>Favor needs with a clear “access disruption” pathway (missed appointments, delayed preventive care, avoidable ED use).</li>
+                  <li>Use CHNA language + tables as the shared basis for a bank–hospital decision memo.</li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
 
         <div class="panel">
-          <h2>Evidence Snippets</h2>
-          <p class="sub">Traceability matters. This list preserves the text segments that triggered each signal (document + page).</p>
+          <h2>Geography & Stakeholder Context <span class="chip">Attribution readiness</span></h2>
+          <p class="sub">
+            CRA attribution depends on demonstrating who benefited and where. This section extracts geographies and public‑facing stakeholders mentioned in documents
+            (counties, cities, ZIPs, census tracts, transit providers, etc.) to support early partnership scoping.
+          </p>
+          <div class="split">
+            <div class="codebox" id="geoBox">No geographies detected yet.</div>
+            <div class="codebox" id="stakeBox">No stakeholder entities detected yet.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Evidence Snippets <span class="chip">Traceability</span></h2>
+          <p class="sub">Every signal is linked to the text that triggered it (document + page). This is the foundation of an exam‑ready file.</p>
           <table class="table" id="evidenceTable">
             <thead>
               <tr>
-                <th>Signal</th>
+                <th>Disparity</th>
                 <th>Snippet</th>
                 <th>Doc</th>
                 <th>Page</th>
@@ -463,44 +560,63 @@
     <!-- Tier 2 -->
     <section id="t2" class="tabPane" style="display:none">
       <div class="grid">
+        <div class="kpi">
+          <div class="label">Best opportunity score</div>
+          <div class="value" id="kpiBestOpp">—</div>
+          <div class="hint" id="hintBestOpp">CRA readiness score (0–100) for the top opportunity.</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Scope attribution risk</div>
+          <div class="value" id="kpiScopeRisk">—</div>
+          <div class="hint">Lower risk means easier AA attribution and exam defensibility.</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Tier 3 gate</div>
+          <div class="value" id="kpiGate">—</div>
+          <div class="hint">Tier 3 unlocks when at least one opportunity scores ≥ 60.</div>
+        </div>
+
         <div class="panel">
-          <h2>CHNA → CRA Alignment Crosswalk</h2>
+          <h2>CRA Eligibility & Application Readiness <span class="chip">Exam‑aligned</span></h2>
           <p class="sub">
-            This tier translates detected disparities signals into CRA-aligned activity patterns and eligibility logic.
-            It also prompts for what an examiner typically expects: performance context, scope, responsiveness, and documentation.
+            Tier 2 is designed to help both stakeholders say “Yes” with confidence. It scores each candidate opportunity using:
+            <b>Eligibility clarity</b>, <b>Responsiveness</b> to documented need, <b>Geographic attribution strength</b>, and <b>Documentation burden</b>.
+            It also maps each opportunity to the CRA test(s) most likely to be credited: Lending / Investment / Service.
           </p>
 
-          <table class="table" id="crosswalkTable">
+          <table class="table" id="craTable">
             <thead>
               <tr>
-                <th>Disparities Signal</th>
-                <th>Suggested Activity Pattern</th>
-                <th>CRA Category</th>
-                <th>Evidence to Retain</th>
+                <th>Opportunity</th>
+                <th>CRA Test Mapping</th>
+                <th>Eligibility Strength</th>
+                <th>Score</th>
+                <th>Scope Guidance</th>
+                <th>Application Packet Checklist</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="4" class="small">No signals detected yet. Return to Tier 1 and process documents.</td></tr>
+              <tr><td colspan="6" class="small">No opportunities yet. Return to Tier 1 and process documents.</td></tr>
             </tbody>
           </table>
         </div>
 
         <div class="panel">
-          <h2>Scope & Attribution Guardrails</h2>
+          <h2>Exam Prompts <span class="chip">What examiners ask</span></h2>
           <p class="sub">
-            Examiners evaluate activities in the assessment area (AA), broader statewide/regional area that includes the AA,
-            and sometimes at the institution level. Your file organization should be able to prove where the benefit lands.
+            These prompts reflect typical examiner logic: performance context, responsiveness, scope attribution, and evidence quality.
+            Use this section to write a joint memo that survives scrutiny and clarifies roles.
           </p>
           <div class="split">
-            <div class="codebox" id="scopeBox"></div>
-            <div>
-              <h3 style="margin:0 0 8px; font-size:14px;">Tier 2 Checklist</h3>
-              <ul class="small" style="margin:0; padding-left:18px; line-height:1.5">
-                <li>Identify the documented need/disparity and the affected population segment.</li>
-                <li>Confirm the activity pattern and the CRA category.</li>
-                <li>Confirm geographic attribution (AA vs statewide/regional vs institution-level).</li>
-                <li>List required documentation artifacts (contracts, invoices, beneficiary counts, narrative).</li>
-              </ul>
+            <div class="codebox" id="examPrompts"></div>
+            <div class="recommend">
+              <h3>Partnership Recommendation Engine</h3>
+              <ul id="partnerRecs"></ul>
+              <div class="hr"></div>
+              <button class="secondary" id="btnPickTop">Use Top Opportunity in Tier 3</button>
+              <div class="small" style="margin-top:8px">
+                This sets Tier 3 defaults (activity type + baseline assumptions) using the highest‑scoring Tier 2 opportunity.
+              </div>
             </div>
           </div>
         </div>
@@ -511,40 +627,20 @@
     <section id="t3" class="tabPane" style="display:none">
       <div class="grid">
         <div class="panel">
-          <h2>Tier 3 Impact Modeling (NEMT / Missed Appointments Example)</h2>
+          <h2>Tier 3 Cost & ROI Simulator <span class="chip">Total cost first</span></h2>
           <p class="sub">
-            Upload documents to auto-detect baseline percentages where possible, then run scenario modeling.
-            Outputs are structured for operational planning and exam-ready documentation.
+            Tier 3 answers the basic precursor question: <b>How much does the program cost?</b>
+            Costs are computed as <b>startup + fixed + variable</b>, then compared to benefits. Results are annualized for comparability.
           </p>
 
           <div class="inputs">
             <div class="field">
-              <label>Annual appointments (target population)</label>
-              <input id="inpAnnualAppts" type="number" min="0" value="9000"/>
-            </div>
-            <div class="field">
-              <label>Baseline no-show rate (%)</label>
-              <input id="inpNoShow" type="number" min="0" max="100" step="0.1" value="15"/>
-            </div>
-            <div class="field">
-              <label>% no-shows attributable to transportation (%)</label>
-              <input id="inpTransportShare" type="number" min="0" max="100" step="0.1" value="25"/>
-            </div>
-            <div class="field">
-              <label>Expected reduction in transport-related no-shows (%)</label>
-              <input id="inpReduction" type="number" min="0" max="100" step="0.1" value="30"/>
-            </div>
-            <div class="field">
-              <label>Average net revenue per completed visit ($)</label>
-              <input id="inpNetRev" type="number" min="0" step="1" value="120"/>
-            </div>
-            <div class="field">
-              <label>Program cost per ride / intervention ($)</label>
-              <input id="inpCost" type="number" min="0" step="1" value="35"/>
-            </div>
-            <div class="field">
-              <label>Rides per prevented no-show</label>
-              <input id="inpRidesPer" type="number" min="0.1" step="0.1" value="1.2"/>
+              <label>Activity type</label>
+              <select id="inpActivity">
+                <option value="nmt">Non‑emergency medical transportation (NEMT)</option>
+                <option value="food">Food access support (meals / distribution)</option>
+                <option value="care">Care navigation / referral infrastructure</option>
+              </select>
             </div>
             <div class="field">
               <label>Time horizon (months)</label>
@@ -554,49 +650,98 @@
                 <option value="36">36</option>
               </select>
             </div>
+
+            <div class="field">
+              <label>Annual appointments / touchpoints (target population)</label>
+              <input id="inpAnnualAppts" type="number" min="0" value="9000"/>
+            </div>
+            <div class="field">
+              <label>Baseline disruption rate (%)</label>
+              <input id="inpNoShow" type="number" min="0" max="100" step="0.1" value="15"/>
+            </div>
+            <div class="field">
+              <label>Share attributable to selected barrier (%)</label>
+              <input id="inpBarrierShare" type="number" min="0" max="100" step="0.1" value="25"/>
+            </div>
+            <div class="field">
+              <label>Expected reduction in barrier-related disruptions (%)</label>
+              <input id="inpReduction" type="number" min="0" max="100" step="0.1" value="30"/>
+            </div>
+
+            <div class="field">
+              <label>Average net benefit per completed touchpoint ($)</label>
+              <input id="inpNetRev" type="number" min="0" step="1" value="120"/>
+            </div>
+
+            <div class="field">
+              <label>Startup cost (one-time, $)</label>
+              <input id="inpStartup" type="number" min="0" step="1" value="15000"/>
+            </div>
+            <div class="field">
+              <label>Fixed monthly cost ($/month)</label>
+              <input id="inpFixedMonthly" type="number" min="0" step="1" value="6000"/>
+            </div>
+            <div class="field">
+              <label>Variable unit cost ($/ride or $/benefit unit)</label>
+              <input id="inpVarCost" type="number" min="0" step="1" value="35"/>
+            </div>
+            <div class="field">
+              <label>Units per prevented disruption (e.g., rides per no-show)</label>
+              <input id="inpUnitsPer" type="number" min="0.1" step="0.1" value="1.2"/>
+            </div>
+            <div class="field">
+              <label>% of participants qualifying as LMI (estimate)</label>
+              <input id="inpLMI" type="number" min="0" max="100" step="1" value="70"/>
+            </div>
           </div>
 
           <div class="btnRow" style="margin-top:12px">
-            <button class="primary" id="btnRunModel">Run Model</button>
-            <button id="btnAutofill">Auto-fill from detected signals</button>
+            <button class="primary" id="btnRunModel">Run Cost & ROI</button>
+            <button class="secondary" id="btnAutofill">Auto-fill from Tier 2</button>
           </div>
 
           <div class="grid" style="margin-top:12px">
             <div class="kpi">
-              <div class="label">Prevented no-shows (annualized)</div>
-              <div class="value" id="kpiPrevented">—</div>
-              <div class="hint">Derived from baseline no-show rate × transport share × reduction.</div>
+              <div class="label">Program cost (annualized)</div>
+              <div class="value" id="kpiProgCost">—</div>
+              <div class="hint">Startup + fixed + variable, normalized to annual basis.</div>
             </div>
             <div class="kpi">
-              <div class="label">Net financial impact ($/year)</div>
+              <div class="label">Gross benefit (annualized)</div>
+              <div class="value" id="kpiBenefit">—</div>
+              <div class="hint">Prevented disruptions × benefit per completed touchpoint.</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Net impact (annualized)</div>
               <div class="value" id="kpiNetImpact">—</div>
-              <div class="hint">Added net revenue minus program costs (annualized).</div>
-            </div>
-            <div class="kpi">
-              <div class="label">Estimated rides supported (annualized)</div>
-              <div class="value" id="kpiRides">—</div>
-              <div class="hint">Rides = prevented no-shows × rides-per-prevented no-show.</div>
+              <div class="hint">Gross benefit minus program cost (annualized).</div>
             </div>
 
-            <div class="panel" style="grid-column: span 12;">
+            <div class="panel">
+              <h2>Visuals <span class="chip">Benefits vs costs</span></h2>
               <div class="twoCol">
-                <div>
-                  <canvas id="roiBar" height="220"></canvas>
-                </div>
-                <div>
-                  <canvas id="trendLine" height="220"></canvas>
-                </div>
+                <div><canvas id="roiBar" height="220"></canvas></div>
+                <div><canvas id="trendLine" height="220"></canvas></div>
               </div>
               <div class="small" style="margin-top:10px">
-                The charts visualize (1) benefits vs costs and (2) a simple month-by-month projection over the chosen horizon.
-                These can be exported as images via browser “Save image” on the chart.
+                Left: Annualized benefit, cost, net. Right: monthly and cumulative net over the selected horizon.
               </div>
             </div>
 
             <div class="panel">
-              <h2>Audit-Ready Output (Copy/Paste)</h2>
-              <p class="sub">This block is designed to be dropped into an internal memo, CRA file, or implementation plan appendix.</p>
+              <h2>Audit‑Ready Output <span class="chip">Memo block</span></h2>
+              <p class="sub">
+                Copy/paste into a joint hospital–bank memo, CRA file, or implementation plan.
+                Includes: documented need, eligibility posture, total cost baseline, and monitoring checklist.
+              </p>
               <div id="auditOutput" class="codebox"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>30‑60‑90 Day Partnership Action Plan <span class="chip">Execution</span></h2>
+            <div class="recommend">
+              <ul id="actionPlan"></ul>
             </div>
           </div>
         </div>
@@ -615,7 +760,6 @@
     const ts = new Date().toISOString().replace('T',' ').replace('Z','');
     logEl.textContent = `[${ts}] ${msg}\n` + logEl.textContent;
   }
-
   function setStatus(kind, text){
     const dot = document.getElementById("statusDot");
     dot.classList.remove("good","bad");
@@ -623,7 +767,6 @@
     if(kind === "bad") dot.classList.add("bad");
     document.getElementById("statusText").textContent = text;
   }
-
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
   function fmtPct(x){ return (x==null || isNaN(x)) ? "—" : `${x.toFixed(1)}%`; }
   function fmtInt(x){ return (x==null || isNaN(x)) ? "—" : `${Math.round(x).toLocaleString()}`; }
@@ -633,20 +776,21 @@
     const v = Math.abs(x);
     return `${sign}$${v.toLocaleString(undefined,{maximumFractionDigits:0})}`;
   }
+  function escapeHtml(s){
+    return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
 
   // ------------------------------
   // State
   // ------------------------------
   const state = {
     docs: [],             // {name, type, pages, textByPage[]}
-    evidence: [],         // {signal, snippet, doc, page}
-    signals: {            // extracted best values
-      transportation_pct: null,
-      transportation_pct_age6574: null,
-      food_insecurity_pct: null,
-      housing_need_pct: null,
-      financial_need_pct: null,
-    }
+    evidence: [],         // {disparity, snippet, doc, page}
+    geo: {zip:new Set(), county:new Set(), city:new Set(), tract:new Set()},
+    stakeholders: new Set(),
+    findings: [],         // Tier 1 items: {key, disparity, metric, segment, magnitude, prominence, concentration, score, recommend, evidenceRef}
+    opportunities: [],    // Tier 2 items: {opp, tests, strength, score, scope, checklist, kind, barrierHint}
+    selectedOpp: null
   };
 
   // ------------------------------
@@ -664,55 +808,33 @@
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       const strings = content.items.map(it => it.str).filter(Boolean);
-      // Keep as a single line-ish block
       const text = strings.join(" ").replace(/\s+/g,' ').trim();
       textByPage.push(text);
     }
     return {pages: numPages, textByPage};
   }
-
   async function extractTxt(file){
     const text = await file.text();
     return {pages: 1, textByPage: [text.replace(/\s+/g,' ').trim()]};
   }
 
   // ------------------------------
-  // Signal extraction heuristics
+  // Extraction: signals + context
   // ------------------------------
-  function capture(signal, value, snippet, doc, page){
-    // keep best: prefer non-null, and for same signal keep first unless new seems more specific
-    state.evidence.push({signal, snippet, doc, page});
-    // Update best values
-    if(signal === "Transportation barrier (%)"){
-      if(state.signals.transportation_pct == null) state.signals.transportation_pct = value;
-    }
-    if(signal === "Transportation barrier (65–74) (%)"){
-      state.signals.transportation_pct_age6574 = value; // allow overwrite if found
-    }
-    if(signal === "Food insecurity (%)"){
-      if(state.signals.food_insecurity_pct == null) state.signals.food_insecurity_pct = value;
-    }
-    if(signal === "Housing need (%)"){
-      if(state.signals.housing_need_pct == null) state.signals.housing_need_pct = value;
-    }
-    if(signal === "Financial need (%)"){
-      if(state.signals.financial_need_pct == null) state.signals.financial_need_pct = value;
-    }
+  const DISPARITIES = [
+    {key:"transport", label:"Transportation barrier", keywords:["transportation", "transit", "ride", "no reliable transportation"], metric:"% reporting transportation problems"},
+    {key:"food", label:"Food insecurity", keywords:["food insecurity", "food shelf", "food bank", "hungry"], metric:"% reporting food insecurity"},
+    {key:"housing", label:"Housing need", keywords:["housing needs", "housing instability", "homeless", "shelter"], metric:"% reporting housing needs"},
+    {key:"financial", label:"Financial need", keywords:["financial needs", "financial strain", "cost too much"], metric:"% reporting financial needs"},
+    {key:"access", label:"Access to care barrier", keywords:["could not get an appointment", "delayed care", "did not get or delay"], metric:"% delaying needed care"}
+  ];
+
+  function recordEvidence(disparityLabel, snippet, doc, page){
+    state.evidence.push({disparity:disparityLabel, snippet, doc, page});
   }
 
   function findPercentNear(text, keyword){
-    // Look for "keyword ... 12.3%" within ~120 chars
-    const re = new RegExp(`${keyword}[\\s\\S]{0,120}?(\\d{1,2}(?:\\.\\d+)?)%`, "i");
-    const m = text.match(re);
-    if(!m) return null;
-    const val = parseFloat(m[1]);
-    if(isNaN(val)) return null;
-    return {val, snippet: m[0].slice(0,240)};
-  }
-
-  function findTransport6574(text){
-    // Look for a line that contains 65-74 and transportation and a %.
-    const re = /65\s*-\s*74[\s\S]{0,160}transportation[\s\S]{0,80}?(\d{1,2}(?:\.\d+)?)%/i;
+    const re = new RegExp(`${keyword}[\\s\\S]{0,140}?(\\d{1,2}(?:\\.\\d+)?)%`, "i");
     const m = text.match(re);
     if(!m) return null;
     const val = parseFloat(m[1]);
@@ -720,106 +842,351 @@
     return {val, snippet: m[0].slice(0,260)};
   }
 
-  function scanDocText(doc){
-    for(let i=0; i<doc.textByPage.length; i++){
-      const t = doc.textByPage[i];
+  function findAgeBandPercent(text, keyword){
+    // Detect "65-74 ... keyword ... 8.5%"
+    const re = new RegExp(`(\\d{2})\\s*[-–]\\s*(\\d{2})[\\s\\S]{0,160}?${keyword}[\\s\\S]{0,90}?(\\d{1,2}(?:\\.\\d+)?)%`, "i");
+    const m = text.match(re);
+    if(!m) return null;
+    return {band:`${m[1]}–${m[2]}`, val:parseFloat(m[3]), snippet:m[0].slice(0,280)};
+  }
 
-      // Transportation (general)
-      const tr = findPercentNear(t, "transportation");
-      if(tr) capture("Transportation barrier (%)", tr.val, tr.snippet, doc.name, i+1);
+  function scanContext(text){
+    // ZIPs (5 digits with "zip" nearby or standalone)
+    const zipRe = /\b(?:ZIP|Zip|zip)\s*(?:code)?\s*[:#]?\s*(\d{5})\b/g;
+    let m;
+    while((m = zipRe.exec(text)) !== null){ state.geo.zip.add(m[1]); }
 
-      // Transportation in 65–74
-      const tr6574 = findTransport6574(t);
-      if(tr6574) capture("Transportation barrier (65–74) (%)", tr6574.val, tr6574.snippet, doc.name, i+1);
-
-      // Food insecurity
-      const fi = findPercentNear(t, "food insecurity");
-      if(fi) capture("Food insecurity (%)", fi.val, fi.snippet, doc.name, i+1);
-
-      // Housing needs
-      const hn = findPercentNear(t, "housing needs?");
-      if(hn) capture("Housing need (%)", hn.val, hn.snippet, doc.name, i+1);
-
-      // Financial needs
-      const fn = findPercentNear(t, "financial needs?");
-      if(fn) capture("Financial need (%)", fn.val, fn.snippet, doc.name, i+1);
+    const zipOnlyRe = /\b(\d{5})\b/g;
+    let z;
+    while((z = zipOnlyRe.exec(text)) !== null){
+      // avoid years like 2025, 2024 etc
+      const v = z[1];
+      if(v.startsWith("20")) continue;
+      // only keep if text nearby suggests geography
+      const idx = z.index;
+      const window = text.slice(Math.max(0, idx-40), Math.min(text.length, idx+40)).toLowerCase();
+      if(window.includes("zip") || window.includes("county") || window.includes("tract")) state.geo.zip.add(v);
     }
+
+    // Counties / Cities (simple heuristic)
+    const countyRe = /\b([A-Z][a-z]+)\s+County\b/g;
+    while((m = countyRe.exec(text)) !== null){ state.geo.county.add(m[1] + " County"); }
+
+    const tractRe = /\b(?:census\s+tract|tract)\s*(\d{3,6}(?:\.\d+)?)\b/ig;
+    while((m = tractRe.exec(text)) !== null){ state.geo.tract.add("Tract " + m[1]); }
+
+    // Stakeholders / orgs (very lightweight heuristic: phrases ending with Coalition, Transit, Public Health, etc.)
+    const orgRe = /\b([A-Z][A-Za-z&.\- ]{2,60})\s+(Coalition|Public Health|Transit|Transportation|Action Council|United Way|Health Department|Foundation)\b/g;
+    while((m = orgRe.exec(text)) !== null){
+      const name = (m[1] + " " + m[2]).trim().replace(/\s+/g,' ');
+      state.stakeholders.add(name);
+    }
+  }
+
+  function scanDoc(doc){
+    // For each page: capture context, find disparity signals, compute prominence counts.
+    const prominence = {}; // key -> count hits
+    for(const d of DISPARITIES){ prominence[d.key] = 0; }
+
+    for(let i=0;i<doc.textByPage.length;i++){
+      const t = doc.textByPage[i];
+      scanContext(t);
+
+      for(const d of DISPARITIES){
+        // prominence: keyword occurrence
+        for(const kw of d.keywords){
+          if(t.toLowerCase().includes(kw.toLowerCase())) { prominence[d.key] += 1; break; }
+        }
+
+        // attempt percent extraction for key keywords
+        // pick first keyword as primary anchor
+        const primary = d.keywords[0];
+        const p = findPercentNear(t, primary);
+        if(p){
+          recordEvidence(d.label, p.snippet, doc.name, i+1);
+          addFinding(d.key, d.label, d.metric, "Overall", p.val, prominence[d.key], null, `${doc.name} p.${i+1}`);
+        }
+
+        // subgroup detection for age bands (especially for transport)
+        const ab = findAgeBandPercent(t, primary);
+        if(ab && !isNaN(ab.val)){
+          recordEvidence(d.label, ab.snippet, doc.name, i+1);
+          addFinding(d.key, d.label, d.metric, `Age ${ab.band}`, ab.val, prominence[d.key], "age_band", `${doc.name} p.${i+1}`);
+        }
+      }
+    }
+  }
+
+  function addFinding(key, disparity, metric, segment, magnitude, prominenceCount, concentrationType, evidenceRef){
+    // Avoid duplicates: keep the highest magnitude for same key+segment
+    const id = `${key}__${segment}`;
+    const existing = state.findings.find(x => x.id === id);
+    if(existing){
+      if(magnitude > existing.magnitude){
+        existing.magnitude = magnitude;
+        existing.prominence = Math.max(existing.prominence, prominenceCount);
+        existing.evidenceRef = evidenceRef;
+      }
+      return;
+    }
+    state.findings.push({
+      id, key, disparity, metric, segment, magnitude,
+      prominence: prominenceCount,
+      concentrationType: concentrationType || null,
+      concentration: null, // computed later
+      score: null,
+      recommend: null,
+      evidenceRef
+    });
+  }
+
+  function computeMateriality(){
+    // Build concentration deltas (overall vs subgroup) per key
+    const byKey = {};
+    for(const f of state.findings){
+      if(!byKey[f.key]) byKey[f.key] = [];
+      byKey[f.key].push(f);
+    }
+    for(const key of Object.keys(byKey)){
+      const list = byKey[key];
+      const overall = list.find(x => x.segment === "Overall");
+      for(const f of list){
+        if(f.segment !== "Overall" && overall){
+          f.concentration = Math.max(0, f.magnitude - overall.magnitude); // delta
+        }else{
+          f.concentration = 0;
+        }
+      }
+    }
+
+    // Materiality score 0-100:
+    // - Magnitude: scaled 0-60 (cap at 30% -> 60)
+    // - Concentration: scaled 0-25 (cap delta 15% -> 25)
+    // - Prominence: scaled 0-15 (cap 6 hits -> 15)
+    for(const f of state.findings){
+      const magScore = clamp((f.magnitude/30)*60, 0, 60);
+      const concScore = clamp((f.concentration/15)*25, 0, 25);
+      const promScore = clamp((f.prominence/6)*15, 0, 15);
+      const score = Math.round(magScore + concScore + promScore);
+      f.score = score;
+
+      // Recommendation gating
+      if(score >= 70) f.recommend = "Advance (high)";
+      else if(score >= 55) f.recommend = "Advance (moderate)";
+      else f.recommend = "Defer / monitor";
+    }
+
+    // Sort descending
+    state.findings.sort((a,b)=>b.score - a.score);
+  }
+
+  // ------------------------------
+  // Tier 2: Opportunities + CRA readiness scoring
+  // ------------------------------
+  function buildOpportunities(){
+    // Derive opportunities from Tier 1 findings (unique by key)
+    const bestByKey = {};
+    for(const f of state.findings){
+      if(!bestByKey[f.key]) bestByKey[f.key] = f;
+    }
+    const opps = [];
+
+    function scoreOpportunity(eligibilityClarity, responsiveness, attributionStrength, docBurden){
+      // 0-100 score; higher is better; doc burden reduces score.
+      return Math.round(
+        0.30*eligibilityClarity +
+        0.30*responsiveness +
+        0.25*attributionStrength +
+        0.15*(100 - docBurden)
+      );
+    }
+
+    // Transport -> NEMT
+    if(bestByKey.transport){
+      const f = bestByKey.transport;
+      const eligibility = 85; // strong precedent (community services targeted to LMI; also CD services)
+      const responsiveness = clamp(f.score, 0, 100); // tie to Tier 1 materiality
+      const attribution = state.geo.zip.size>0 || state.geo.county.size>0 ? 80 : 65;
+      const burden = 35; // moderate burden: rides, eligibility, invoices, beneficiary counts, geography
+
+      const score = scoreOpportunity(eligibility, responsiveness, attribution, burden);
+      opps.push({
+        opp: "NEMT / Transportation-to-care program (missed appointment mitigation)",
+        tests: "Service • Investment (as structured) • CD Loans (as structured)",
+        strength: score>=75 ? "Strong" : (score>=60 ? "Moderate" : "Weak"),
+        score,
+        scope: "AA attribution easiest when rides and beneficiaries are documented within AA; otherwise state/regional attribution with clear benefit mapping.",
+        checklist: "CHNA excerpts + affected segment; service area map (ZIP/tract/county); partner agreement; invoices; ride counts; LMI eligibility method; monitoring dashboard.",
+        kind: "nmt",
+        barrierHint: "transportation"
+      });
+    }
+
+    // Food -> Food access support
+    if(bestByKey.food){
+      const f = bestByKey.food;
+      const eligibility = 80;
+      const responsiveness = clamp(f.score, 0, 100);
+      const attribution = state.geo.zip.size>0 || state.geo.county.size>0 ? 75 : 60;
+      const burden = 45; // higher burden: define eligible population, distribution counts, partner controls
+
+      const score = scoreOpportunity(eligibility, responsiveness, attribution, burden);
+      opps.push({
+        opp: "Food access support (distribution / vouchers / medically tailored meals)",
+        tests: "Investment • Service (depending on structure)",
+        strength: score>=75 ? "Strong" : (score>=60 ? "Moderate" : "Weak"),
+        score,
+        scope: "Use service area definition + LMI targeting method; retain evidence of who received support and where.",
+        checklist: "CHNA need + measure; program design; eligibility criteria; distribution logs; vendor contracts; LMI estimate; outcome tracking (visit adherence).",
+        kind: "food",
+        barrierHint: "food insecurity"
+      });
+    }
+
+    // Care navigation / access barriers -> referral infrastructure
+    if(bestByKey.access){
+      const f = bestByKey.access;
+      const eligibility = 70;
+      const responsiveness = clamp(f.score, 0, 100);
+      const attribution = state.geo.county.size>0 ? 70 : 55;
+      const burden = 50; // define what service is provided and how it benefits LMI
+
+      const score = scoreOpportunity(eligibility, responsiveness, attribution, burden);
+      opps.push({
+        opp: "Care navigation / referral infrastructure (access enablement)",
+        tests: "Service • Investment (as structured)",
+        strength: score>=75 ? "Strong" : (score>=60 ? "Moderate" : "Weak"),
+        score,
+        scope: "Document service delivery in AA; if tool spans regions, document proportional benefit to AA.",
+        checklist: "CHNA access barrier evidence; workflow design; staffing/training logs; referral counts; beneficiary characteristics; evaluation plan.",
+        kind: "care",
+        barrierHint: "access to care"
+      });
+    }
+
+    // Sort
+    opps.sort((a,b)=>b.score-a.score);
+    state.opportunities = opps;
+    state.selectedOpp = opps.length ? opps[0] : null;
+  }
+
+  function tier3Unlocked(){
+    return state.opportunities.some(o => o.score >= 60);
   }
 
   // ------------------------------
   // Rendering
   // ------------------------------
-  let needsChart = null;
+  let materialityChart = null;
   let roiChart = null;
   let trendChart = null;
 
   function renderStatus(){
     document.getElementById("docsCount").textContent = state.docs.length;
     document.getElementById("evidenceCount").textContent = state.evidence.length;
+    const unlocked = tier3Unlocked();
+    document.getElementById("tierGate").textContent = unlocked ? "Unlocked" : "Locked";
+
+    const gateDot = document.getElementById("gateDot");
+    gateDot.classList.remove("good","bad");
+    if(unlocked){ gateDot.classList.add("good"); document.getElementById("gateText").textContent = "Tier 3 unlocked (Tier 2 score ≥ 60)"; }
+    else { document.getElementById("gateText").textContent = "Tier 3 locked until Tier 2 scores ≥ 60"; }
+
     if(state.docs.length === 0){
-      setStatus("warn", "No documents processed");
+      setStatus("warn","No documents processed");
     }else{
       setStatus("good", `Processed ${state.docs.length} document(s)`);
     }
   }
 
-  function renderKPIs(){
-    const t = state.signals.transportation_pct;
-    const t6574 = state.signals.transportation_pct_age6574;
-
-    const transportValue = (t6574!=null)
-      ? `${fmtPct(t)} (overall) • ${fmtPct(t6574)} (65–74)`
-      : fmtPct(t);
-
-    document.getElementById("kpiTransport").textContent = transportValue || "—";
-    document.getElementById("kpiFood").textContent = fmtPct(state.signals.food_insecurity_pct);
-    document.getElementById("kpiHousing").textContent = fmtPct(state.signals.housing_need_pct);
-
-    document.getElementById("hintTransport").textContent =
-      (t!=null) ? "Detected from uploaded documents (keyword: transportation)." : "Upload a CHNA to detect transportation-related percentages.";
-    document.getElementById("hintFood").textContent =
-      (state.signals.food_insecurity_pct!=null) ? "Detected from uploaded documents (keyword: food insecurity)." : "Detected from text like “food insecurity” and nearby % values.";
-    document.getElementById("hintHousing").textContent =
-      (state.signals.housing_need_pct!=null) ? "Detected from uploaded documents (keyword: housing needs)." : "Detected from text like “housing needs” and nearby % values.";
-  }
-
-  function renderSignalsTable(){
-    const tbody = document.querySelector("#signalsTable tbody");
-    tbody.innerHTML = "";
-    const rows = [];
-
-    if(state.signals.transportation_pct != null){
-      rows.push(["Transportation barrier", fmtPct(state.signals.transportation_pct), "General population / survey respondents", bestSourceFor("Transportation barrier (%)")]);
-    }
-    if(state.signals.transportation_pct_age6574 != null){
-      rows.push(["Transportation barrier", fmtPct(state.signals.transportation_pct_age6574), "Age 65–74", bestSourceFor("Transportation barrier (65–74) (%)")]);
-    }
-    if(state.signals.food_insecurity_pct != null){
-      rows.push(["Food insecurity", fmtPct(state.signals.food_insecurity_pct), "General population / survey respondents", bestSourceFor("Food insecurity (%)")]);
-    }
-    if(state.signals.housing_need_pct != null){
-      rows.push(["Housing need", fmtPct(state.signals.housing_need_pct), "General population / survey respondents", bestSourceFor("Housing need (%)")]);
-    }
-    if(state.signals.financial_need_pct != null){
-      rows.push(["Financial need", fmtPct(state.signals.financial_need_pct), "General population / survey respondents", bestSourceFor("Financial need (%)")]);
-    }
-
-    if(rows.length === 0){
-      tbody.innerHTML = `<tr><td colspan="4" class="small">No signals detected yet. Upload documents and click <b>Process Files</b>.</td></tr>`;
+  function renderTier1KPIs(){
+    if(state.findings.length === 0){
+      document.getElementById("kpiTopDisparity").textContent = "—";
+      document.getElementById("kpiTopConcentration").textContent = "—";
+      document.getElementById("kpiPriorityCount").textContent = "—";
       return;
     }
-    for(const r of rows){
+    const top = state.findings[0];
+    document.getElementById("kpiTopDisparity").textContent = `${top.disparity} (${top.score})`;
+    document.getElementById("hintTopDisparity").textContent = `Highest materiality: magnitude ${top.magnitude.toFixed(1)}%, prominence ${top.prominence}, concentration Δ ${top.concentration.toFixed(1)}%.`;
+
+    // top concentration (largest delta among subgroup findings)
+    const subs = state.findings.filter(f => f.segment !== "Overall").sort((a,b)=>b.concentration-a.concentration);
+    if(subs.length){
+      const c = subs[0];
+      document.getElementById("kpiTopConcentration").textContent = `${c.disparity} Δ${c.concentration.toFixed(1)}% (${c.segment})`;
+      document.getElementById("hintTopConcentration").textContent = `Subgroup concentration indicates a targeted intervention with clearer attribution and evaluation.`;
+    }else{
+      document.getElementById("kpiTopConcentration").textContent = "—";
+      document.getElementById("hintTopConcentration").textContent = "No subgroup differential detected in uploaded text. Upload CHNA pages with segmented tables for stronger targeting.";
+    }
+
+    const priority = state.findings.filter(f => f.score >= 55).length;
+    document.getElementById("kpiPriorityCount").textContent = `${priority} item(s)`;
+    document.getElementById("hintPriorityCount").textContent = priority ? "These are recommended to advance to Tier 2 for CRA readiness scoring." : "No items reached the default advancement threshold (55).";
+  }
+
+  function renderMaterialityTable(){
+    const tbody = document.querySelector("#materialityTable tbody");
+    tbody.innerHTML = "";
+    if(state.findings.length === 0){
+      tbody.innerHTML = `<tr><td colspan="7" class="small">No materiality results yet. Upload documents and click <b>Process Files</b>.</td></tr>`;
+      return;
+    }
+    for(const f of state.findings.slice(0,12)){
+      const rec = f.recommend.includes("high") ? `<span class="badge b-strong">Advance</span>` :
+                  f.recommend.includes("moderate") ? `<span class="badge b-mod">Advance</span>` :
+                  `<span class="badge b-weak">Defer</span>`;
+      const evidence = f.evidenceRef ? `<span class="mono">${escapeHtml(f.evidenceRef)}</span>` : "—";
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${r[0]}</td><td class="mono">${r[1]}</td><td>${r[2]}</td><td class="mono">${r[3]}</td>`;
+      tr.innerHTML = `
+        <td>${escapeHtml(f.disparity)}</td>
+        <td>${escapeHtml(f.metric)}</td>
+        <td>${escapeHtml(f.segment)}</td>
+        <td class="mono">${fmtPct(f.magnitude)}</td>
+        <td class="mono"><b>${f.score}</b></td>
+        <td>${rec} <span class="mono" style="color:var(--muted)">(${escapeHtml(f.recommend)})</span></td>
+        <td>${evidence}</td>
+      `;
       tbody.appendChild(tr);
     }
   }
 
-  function bestSourceFor(signalName){
-    // Return "DocName p.X" for first evidence of signal
-    const e = state.evidence.find(x => x.signal === signalName);
-    if(!e) return "—";
-    return `${e.doc} p.${e.page}`;
+  function renderMaterialityChart(){
+    const ctx = document.getElementById("materialityChart");
+    const top = state.findings.slice(0,8);
+    const labels = top.map(f => f.disparity + (f.segment!=="Overall" ? ` (${f.segment})` : ""));
+    const vals = top.map(f => f.score);
+    if(materialityChart) materialityChart.destroy();
+    materialityChart = new Chart(ctx, {
+      type:"bar",
+      data:{ labels, datasets:[{label:"Materiality (0–100)", data: vals}]},
+      options:{
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:"#a9b8db"}, grid:{color:"rgba(255,255,255,.06)"}},
+          y:{ticks:{color:"#a9b8db"}, grid:{color:"rgba(255,255,255,.06)"}, beginAtZero:true, max:100}
+        }
+      }
+    });
+  }
+
+  function renderGeoStake(){
+    function setBox(el, title, items){
+      const arr = Array.from(items).slice(0,30);
+      if(arr.length===0){
+        el.textContent = `No ${title.toLowerCase()} detected yet.`;
+        return;
+      }
+      el.textContent = `${title} detected:\n\n- ` + arr.join("\n- ");
+    }
+    setBox(document.getElementById("geoBox"), "Geographies", [
+      ...Array.from(state.geo.county),
+      ...Array.from(state.geo.city),
+      ...Array.from(state.geo.zip).map(z=>`ZIP ${z}`),
+      ...Array.from(state.geo.tract)
+    ]);
+    setBox(document.getElementById("stakeBox"), "Stakeholders / Entities", state.stakeholders);
   }
 
   function renderEvidenceTable(){
@@ -829,12 +1196,11 @@
       tbody.innerHTML = `<tr><td colspan="4" class="small">No evidence captured yet.</td></tr>`;
       return;
     }
-    // Show up to 25 most recent
-    const slice = state.evidence.slice(-25).reverse();
+    const slice = state.evidence.slice(-30).reverse();
     for(const e of slice){
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${e.signal}</td>
+        <td>${escapeHtml(e.disparity)}</td>
         <td>${escapeHtml(e.snippet)}</td>
         <td class="mono">${escapeHtml(e.doc)}</td>
         <td class="mono">${e.page}</td>
@@ -843,166 +1209,205 @@
     }
   }
 
-  function escapeHtml(s){
-    return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  function renderTier2KPIs(){
+    if(state.opportunities.length===0){
+      document.getElementById("kpiBestOpp").textContent = "—";
+      document.getElementById("kpiScopeRisk").textContent = "—";
+      document.getElementById("kpiGate").textContent = "—";
+      return;
+    }
+    const top = state.opportunities[0];
+    document.getElementById("kpiBestOpp").textContent = `${top.score}`;
+    document.getElementById("hintBestOpp").textContent = `${top.opp}`;
+    // scope risk proxy: 100 - attribution strength approx; use geography presence
+    const risk = (state.geo.zip.size>0 || state.geo.county.size>0) ? "Low–Moderate" : "Moderate–High";
+    document.getElementById("kpiScopeRisk").textContent = risk;
+    const unlocked = tier3Unlocked();
+    document.getElementById("kpiGate").textContent = unlocked ? "Unlocked" : "Locked";
   }
 
-  function renderNeedsChart(){
-    const ctx = document.getElementById("needsBar");
-    const labels = [];
-    const vals = [];
-    if(state.signals.transportation_pct != null){ labels.push("Transportation"); vals.push(state.signals.transportation_pct); }
-    if(state.signals.food_insecurity_pct != null){ labels.push("Food insecurity"); vals.push(state.signals.food_insecurity_pct); }
-    if(state.signals.housing_need_pct != null){ labels.push("Housing need"); vals.push(state.signals.housing_need_pct); }
-    if(state.signals.financial_need_pct != null){ labels.push("Financial need"); vals.push(state.signals.financial_need_pct); }
-
-    if(needsChart) needsChart.destroy();
-    needsChart = new Chart(ctx, {
-      type: "bar",
-      data: { labels, datasets: [{ label: "Detected %", data: vals }] },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: "#a9b6d6" }, grid: { color: "rgba(255,255,255,.06)" } },
-          y: { ticks: { color: "#a9b6d6" }, grid: { color: "rgba(255,255,255,.06)" }, beginAtZero: true, max: 100 }
-        }
-      }
-    });
+  function strengthBadge(str){
+    if(str==="Strong") return `<span class="badge b-strong">Strong</span>`;
+    if(str==="Moderate") return `<span class="badge b-mod">Moderate</span>`;
+    return `<span class="badge b-weak">Weak</span>`;
   }
 
-  function renderTier2(){
-    // Crosswalk signals -> CRA-aligned patterns (compact curated set, editable later)
-    const tbody = document.querySelector("#crosswalkTable tbody");
+  function renderCRATable(){
+    const tbody = document.querySelector("#craTable tbody");
     tbody.innerHTML = "";
-
-    const items = [];
-    if(state.signals.transportation_pct != null || state.signals.transportation_pct_age6574 != null){
-      items.push({
-        signal: "Transportation barrier to medical / preventive care",
-        pattern: "Non-emergency medical transportation (NEMT): rides to appointments; scheduling + reminders; targeted to LMI segments",
-        category: "Community services (targeted to LMI) / Community development service",
-        evidence: "CHNA table showing transportation as barrier; program invoices; counts of rides; beneficiary profile; service area maps"
-      });
+    if(state.opportunities.length===0){
+      tbody.innerHTML = `<tr><td colspan="6" class="small">No opportunities yet. Return to Tier 1 and process documents.</td></tr>`;
+      return;
     }
-    if(state.signals.food_insecurity_pct != null){
-      items.push({
-        signal: "Food insecurity affecting access to health",
-        pattern: "Food access supports: food shelf partnerships; medically-tailored food distribution; logistics for LMI households",
-        category: "Community services (targeted to LMI) / Qualified investments (as applicable)",
-        evidence: "CHNA food insecurity %; partner MOU; distribution counts; eligibility criteria; outcome measures (visit adherence)"
-      });
+    for(const o of state.opportunities){
+      const score = o.score;
+      const badge = strengthBadge(o.strength);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><b>${escapeHtml(o.opp)}</b></td>
+        <td>${escapeHtml(o.tests)}</td>
+        <td>${badge}</td>
+        <td class="mono"><b>${score}</b></td>
+        <td>${escapeHtml(o.scope)}</td>
+        <td>${escapeHtml(o.checklist)}</td>
+      `;
+      tbody.appendChild(tr);
     }
-    if(state.signals.housing_need_pct != null){
-      items.push({
-        signal: "Housing instability / housing need",
-        pattern: "Housing stabilization supports: referral infrastructure; short-term bridge support; facility-linked partnerships",
-        category: "Community development (affordable housing / community services) — depending on structure",
-        evidence: "CHNA housing need %; partner documentation; spend records; geographic target mapping; beneficiary definitions"
-      });
+  }
+
+  function renderExamPrompts(){
+    const prompts =
+`Exam prompts to answer (joint bank–hospital memo):
+
+1) Performance context:
+   - What documented disparities/needs does the CHNA establish (who is affected, where, and how measured)?
+   - What evidence shows this is material (magnitude, subgroup concentration, repeat mentions)?
+
+2) Responsiveness:
+   - Why is the selected activity the best-fit response to the documented need?
+   - What alternative activities were considered and why deprioritized?
+
+3) Eligibility & scope:
+   - Which CRA test(s) does the activity support (lending, investment, service) and why?
+   - How is benefit attributed to the assessment area (AA)? If broader, how is proportional benefit demonstrated?
+
+4) Evidence quality:
+   - What documentation artifacts exist (contracts, invoices, beneficiary counts, maps)?
+   - How will you validate that the activity served the intended population?
+
+5) Progress tracking:
+   - What baseline metric will you measure against?
+   - What is the monitoring cadence, and what triggers corrective action?`;
+    document.getElementById("examPrompts").textContent = prompts;
+
+    // Partnership recs: tailored to top opportunity
+    const ul = document.getElementById("partnerRecs");
+    ul.innerHTML = "";
+    if(state.opportunities.length===0){
+      ul.innerHTML = `<li>Process documents to generate partnership recommendations.</li>`;
+      return;
     }
-
-    if(items.length === 0){
-      tbody.innerHTML = `<tr><td colspan="4" class="small">No signals detected yet. Return to Tier 1 and process documents.</td></tr>`;
-    }else{
-      for(const it of items){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${it.signal}</td>
-          <td>${it.pattern}</td>
-          <td>${it.category}</td>
-          <td>${it.evidence}</td>
-        `;
-        tbody.appendChild(tr);
-      }
+    const top = state.opportunities[0];
+    const items = [
+      `Lead with a joint “problem statement” grounded in CHNA evidence and materiality score (Tier 1).`,
+      `Select one high-scoring opportunity (Tier 2 score ≥ 60) and define geography + target population before discussing dollars.`,
+      `Structure funding to maximize exam defensibility: clear LMI targeting method, clear AA attribution, and clean invoice trail.`,
+      `Use Tier 3 to agree on total program cost baseline (startup + fixed + variable) and monitoring KPIs.`,
+      `Operationalize quickly: start with a 90-day pilot in the highest-need segment/geography to generate early performance evidence.`
+    ];
+    for(const it of items){
+      const li = document.createElement("li");
+      li.textContent = it;
+      ul.appendChild(li);
     }
+  }
 
-    // Scope box: pulled from your uploaded procedures, condensed into guardrails language
-    document.getElementById("scopeBox").textContent =
-`Scope & attribution guardrails (exam-ready):
+  function renderTier3Gate(){
+    const unlocked = tier3Unlocked();
+    const t3tab = document.querySelector('.tab[data-tab="t3"]');
+    // We don't disable clicking; but we show lock messaging and keep content visible if user opens.
+    const gateDot = document.getElementById("gateDot");
+    gateDot.classList.remove("good","bad");
+    if(unlocked){ gateDot.classList.add("good"); }
+  }
 
-• Activities are evaluated at:
-  1) Specific Assessment Area (AA) — when the bank can demonstrate the activity benefited and was targeted to the AA.
-  2) State / Multistate MSA — when activities benefit or target two or more AAs or cover a state/multistate MSA.
-  3) Institution level — when activities benefit a broader regional area or nationwide scope.
-
-• Practical documentation rule:
-  Do not assign an activity to a specific AA or state unless the bank can demonstrate the activity benefited and was targeted to that AA/state.
-
-• Your portal should retain:
-  - Target population definition (e.g., LMI, specific neighborhoods/tracts)
-  - Service area geography (maps / tract lists)
-  - Activity records (contracts, invoices, partner attestations)
-  - Beneficiary counts + narrative of responsiveness to documented need`;
+  function pickTopOpportunityForTier3(){
+    state.selectedOpp = state.opportunities.length ? state.opportunities[0] : null;
+    if(!state.selectedOpp){
+      log("No Tier 2 opportunity available to select.");
+      return;
+    }
+    document.getElementById("inpActivity").value = state.selectedOpp.kind;
+    // auto-fill barrier share heuristic based on Tier 1 transport or food etc
+    const hint = state.selectedOpp.barrierHint;
+    // find related Tier 1 overall magnitude
+    const f = state.findings.find(x => x.segment==="Overall" && x.disparity.toLowerCase().includes(hint.split(" ")[0]));
+    if(f){
+      const proxy = clamp(f.magnitude * 3.0, 5, 70);
+      document.getElementById("inpBarrierShare").value = proxy.toFixed(1);
+    }
+    log(`Selected top opportunity for Tier 3: ${state.selectedOpp.opp}`);
   }
 
   function autoFillTier3(){
-    // Try to infer baseline no-show attributable to transportation from detected CHNA transport barrier
-    // If CHNA indicates "transportation problems" as reason for delayed care, we can use it as proxy for transport share of barriers.
-    if(state.signals.transportation_pct != null){
-      // Use as a rough proxy (capped to avoid extreme)
-      const proxy = clamp(state.signals.transportation_pct * 3.0, 5, 60); // heuristic
-      document.getElementById("inpTransportShare").value = proxy.toFixed(1);
-      log(`Tier 3 auto-fill: transport share set to ${proxy.toFixed(1)}% (proxy derived from detected transportation %)`);
-    }
-    if(state.signals.transportation_pct_age6574 != null){
-      // Increase annual appts proxy for seniors only scenario
-      document.getElementById("inpAnnualAppts").value = 9000;
-      log(`Tier 3 auto-fill: detected a 65–74 transport signal; consider modeling a senior-focused service line.`);
-    }
+    if(state.selectedOpp) pickTopOpportunityForTier3();
+    // Also set LMI estimate heuristic: if any CHNA mentions Medicaid/Medical Assistance etc, default higher; else 70.
+    document.getElementById("inpLMI").value = document.getElementById("inpLMI").value || "70";
+    log("Tier 3 auto-fill applied.");
   }
 
+  // ------------------------------
+  // Tier 3 model
+  // ------------------------------
   function runModel(){
-    const annualAppts = parseFloat(document.getElementById("inpAnnualAppts").value || "0");
-    const noShow = parseFloat(document.getElementById("inpNoShow").value || "0")/100;
-    const transportShare = parseFloat(document.getElementById("inpTransportShare").value || "0")/100;
-    const reduction = parseFloat(document.getElementById("inpReduction").value || "0")/100;
-    const netRev = parseFloat(document.getElementById("inpNetRev").value || "0");
-    const cost = parseFloat(document.getElementById("inpCost").value || "0");
-    const ridesPer = parseFloat(document.getElementById("inpRidesPer").value || "1");
-    const months = parseInt(document.getElementById("inpMonths").value || "12", 10);
+    const activity = document.getElementById("inpActivity").value;
+    const months = parseInt(document.getElementById("inpMonths").value||"12",10);
 
-    const baselineNoShows = annualAppts * noShow;
-    const transportNoShows = baselineNoShows * transportShare;
-    const prevented = transportNoShows * reduction;
+    const annualAppts = parseFloat(document.getElementById("inpAnnualAppts").value||"0");
+    const baselineRate = parseFloat(document.getElementById("inpNoShow").value||"0")/100;
+    const share = parseFloat(document.getElementById("inpBarrierShare").value||"0")/100;
+    const reduction = parseFloat(document.getElementById("inpReduction").value||"0")/100;
 
-    const rides = prevented * ridesPer;
-    const benefit = prevented * netRev;
-    const programCost = rides * cost;
-    const netImpact = benefit - programCost;
+    const benefitPer = parseFloat(document.getElementById("inpNetRev").value||"0");
+    const startup = parseFloat(document.getElementById("inpStartup").value||"0");
+    const fixedMonthly = parseFloat(document.getElementById("inpFixedMonthly").value||"0");
+    const varCost = parseFloat(document.getElementById("inpVarCost").value||"0");
+    const unitsPer = parseFloat(document.getElementById("inpUnitsPer").value||"1");
+    const lmiPct = parseFloat(document.getElementById("inpLMI").value||"0");
 
-    document.getElementById("kpiPrevented").textContent = fmtInt(prevented);
-    document.getElementById("kpiRides").textContent = fmtInt(rides);
-    document.getElementById("kpiNetImpact").textContent = fmtMoney(netImpact);
+    // disruptions
+    const baselineDisruptions = annualAppts * baselineRate;
+    const barrierDisruptions = baselineDisruptions * share;
+    const prevented = barrierDisruptions * reduction;
 
-    // ROI bar chart
+    const units = prevented * unitsPer;
+    const grossBenefitAnnual = prevented * benefitPer;
+
+    // Total program cost over horizon (months) — includes startup once
+    const totalCostHorizon = startup + (fixedMonthly * months) + (units * varCost * (months/12)); 
+    // Explanation: annual units scaled to horizon months/12
+    // Annualize cost and benefit
+    const annualFactor = 12 / months;
+    const programCostAnnual = totalCostHorizon * annualFactor;
+    const netAnnual = grossBenefitAnnual - programCostAnnual;
+
+    document.getElementById("kpiProgCost").textContent = fmtMoney(programCostAnnual);
+    document.getElementById("kpiBenefit").textContent = fmtMoney(grossBenefitAnnual);
+    document.getElementById("kpiNetImpact").textContent = fmtMoney(netAnnual);
+
+    // Charts
     const ctx1 = document.getElementById("roiBar");
     if(roiChart) roiChart.destroy();
     roiChart = new Chart(ctx1, {
       type:"bar",
       data:{
-        labels:["Annual benefit","Annual program cost","Net impact"],
-        datasets:[{label:"$", data:[benefit, programCost, netImpact]}]
+        labels:["Annual benefit","Annual program cost","Annual net impact"],
+        datasets:[{label:"$", data:[grossBenefitAnnual, programCostAnnual, netAnnual]}]
       },
       options:{
         plugins:{legend:{display:false}},
         scales:{
-          x:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}},
-          y:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}, beginAtZero:true}
+          x:{ticks:{color:"#a9b8db"}, grid:{color:"rgba(255,255,255,.06)"}},
+          y:{ticks:{color:"#a9b8db"}, grid:{color:"rgba(255,255,255,.06)"}, beginAtZero:true}
         }
       }
     });
 
-    // Trend line (monthly)
+    // Monthly series over horizon
     const ctx2 = document.getElementById("trendLine");
     if(trendChart) trendChart.destroy();
-    const mPrevented = prevented / 12;
-    const mBenefit = benefit / 12;
-    const mCost = programCost / 12;
     const labels = Array.from({length: months}, (_,i)=>`M${i+1}`);
-    const netSeries = labels.map((_,i)=>(mBenefit - mCost));
+
+    const monthlyBenefit = grossBenefitAnnual / 12;
+    const annualUnits = units; // annualized
+    const monthlyUnits = annualUnits / 12;
+
+    const monthlyCost = (startup/months) + fixedMonthly + (monthlyUnits * varCost);
+    const monthlyNet = monthlyBenefit - monthlyCost;
+
+    const netSeries = labels.map(()=>monthlyNet);
     const cumSeries = [];
-    let cum = 0;
+    let cum=0;
     for(const v of netSeries){ cum += v; cumSeries.push(cum); }
 
     trendChart = new Chart(ctx2, {
@@ -1010,71 +1415,116 @@
       data:{
         labels,
         datasets:[
-          {label:"Monthly net impact", data: netSeries, tension:.25},
-          {label:"Cumulative net impact", data: cumSeries, tension:.25}
+          {label:"Monthly net", data: netSeries, tension:.25},
+          {label:"Cumulative net", data: cumSeries, tension:.25}
         ]
       },
       options:{
-        plugins:{legend:{labels:{color:"#a9b6d6"}}},
+        plugins:{legend:{labels:{color:"#a9b8db"}}},
         scales:{
-          x:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}},
-          y:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}}
+          x:{ticks:{color:"#a9b8db"}, grid:{color:"rgba(255,255,255,.06)"}},
+          y:{ticks:{color:"#a9b8db"}, grid:{color:"rgba(255,255,255,.06)"}}
         }
       }
     });
 
-    // Audit-ready output
-    const tOverall = state.signals.transportation_pct;
-    const t6574 = state.signals.transportation_pct_age6574;
-
-    const srcTransport = bestSourceFor("Transportation barrier (%)");
-    const srcTransport6574 = bestSourceFor("Transportation barrier (65–74) (%)");
+    // Audit output
+    const topOpp = state.selectedOpp || (state.opportunities.length ? state.opportunities[0] : null);
+    const oppName = topOpp ? topOpp.opp : "Not selected";
+    const oppScore = topOpp ? topOpp.score : "—";
+    const oppStrength = topOpp ? topOpp.strength : "—";
 
     const auditText =
-`TIER 3 IMPACT MODEL — NEMT / MISSED APPOINTMENT MITIGATION
+`TIER 3 COST & ROI — PROGRAM BASELINE (Audit-ready)
 
-1) Documented disparities signal(s):
-   - Transportation barrier: ${tOverall!=null ? fmtPct(tOverall) : "Not detected"} (source: ${srcTransport})
-   - Transportation barrier (age 65–74): ${t6574!=null ? fmtPct(t6574) : "Not detected"} (source: ${srcTransport6574})
+Selected opportunity: ${oppName}
+Tier 2 readiness: ${oppScore} (${oppStrength})
 
-2) Baseline operational assumptions:
-   - Annual appointments (target population): ${fmtInt(annualAppts)}
-   - Baseline no-show rate: ${(noShow*100).toFixed(1)}%
-   - Share of no-shows attributable to transportation: ${(transportShare*100).toFixed(1)}%
-   - Expected reduction in transport-related no-shows (intervention effect): ${(reduction*100).toFixed(1)}%
-   - Net revenue per completed visit (after variable costs): ${fmtMoney(netRev)}
-   - Program cost per ride / intervention: ${fmtMoney(cost)}
-   - Rides per prevented no-show: ${ridesPer.toFixed(2)}
+1) Documented need (Tier 1):
+${state.findings.slice(0,3).map(f=>`- ${f.disparity} | ${f.segment} | ${fmtPct(f.magnitude)} | materiality ${f.score} | evidence ${f.evidenceRef||"—"}`).join("\n")}
 
-3) Modeled annual impact:
-   - Baseline no-shows: ${fmtInt(baselineNoShows)}
-   - Transport-related no-shows: ${fmtInt(transportNoShows)}
-   - Prevented no-shows (annualized): ${fmtInt(prevented)}
-   - Estimated rides supported (annualized): ${fmtInt(rides)}
-   - Annual benefit (revenue preserved / recovered): ${fmtMoney(benefit)}
-   - Annual program cost: ${fmtMoney(programCost)}
-   - Net annual impact: ${fmtMoney(netImpact)}
+2) Model assumptions:
+- Activity type: ${activity}
+- Time horizon: ${months} months
+- Annual touchpoints: ${fmtInt(annualAppts)}
+- Baseline disruption rate: ${(baselineRate*100).toFixed(1)}%
+- Share attributable to selected barrier: ${(share*100).toFixed(1)}%
+- Expected reduction in barrier-related disruptions: ${(reduction*100).toFixed(1)}%
+- Benefit per completed touchpoint: ${fmtMoney(benefitPer)}
+- LMI estimate: ${lmiPct.toFixed(0)}%
 
-4) Documentation package to retain (audit-ready):
-   - CHNA excerpt(s) documenting transportation barrier + affected segment(s) + geography (as applicable)
-   - Program design: service model, eligibility, service area, partner agreements
-   - Funding records: invoices, contracts, payments, attestations
-   - Output counts: rides provided, completed visits supported, LMI/eligible population counts
-   - Monitoring: monthly/quarterly tracking + variance notes + corrective actions
+3) Total program cost baseline (answers “How much does it cost?”):
+- Startup cost (one-time): ${fmtMoney(startup)}
+- Fixed monthly cost: ${fmtMoney(fixedMonthly)} per month
+- Variable unit cost: ${fmtMoney(varCost)} per unit
+- Units per prevented disruption: ${unitsPer.toFixed(2)}
+- Estimated annual units: ${fmtInt(units)}
+- Total cost over horizon: ${fmtMoney(totalCostHorizon)}
+- Annualized program cost: ${fmtMoney(programCostAnnual)}
+
+4) Impact (annualized):
+- Baseline disruptions: ${fmtInt(baselineDisruptions)}
+- Barrier-related disruptions: ${fmtInt(barrierDisruptions)}
+- Prevented disruptions: ${fmtInt(prevented)}
+- Annual gross benefit: ${fmtMoney(grossBenefitAnnual)}
+- Annual net impact: ${fmtMoney(netAnnual)}
+
+5) Evidence package to retain:
+- CHNA excerpts (need + segment + geography)
+- AA attribution evidence (ZIP/tract/county mapping)
+- Program contracts, invoices, and payment records
+- Beneficiary counts + LMI method + service logs
+- Monitoring cadence + variance/corrective action notes
 
 Generated: ${new Date().toISOString()}`;
     document.getElementById("auditOutput").textContent = auditText;
 
-    log(`Tier 3 model run: prevented=${Math.round(prevented)}, netImpact=${Math.round(netImpact)}`);
+    // 30-60-90 plan
+    const plan = document.getElementById("actionPlan");
+    plan.innerHTML = "";
+    const steps = [
+      "0–30 days: Confirm priority disparity + target segment/geography; draft joint one-page decision memo using Tier 1 evidence + Tier 2 readiness.",
+      "0–30 days: Select implementing partner (transit vendor, nonprofit, CDFI, or hospital ops team) and define eligibility + data capture workflow.",
+      "31–60 days: Finalize funding structure (grant/investment/loan/service) and build documentation packet template (invoices, logs, beneficiary counts, maps).",
+      "31–60 days: Launch pilot in the highest-need segment; begin weekly monitoring of disruptions, units delivered, and early operational feedback.",
+      "61–90 days: Produce interim results report (baseline vs observed); refine workflow; prepare exam-ready narrative and expansion recommendation."
+    ];
+    for(const s of steps){
+      const li = document.createElement("li");
+      li.textContent = s;
+      plan.appendChild(li);
+    }
+
+    log(`Tier 3 model run: annualCost=${Math.round(programCostAnnual)}, annualNet=${Math.round(netAnnual)}`);
   }
 
-  function renderAll(){
-    renderStatus();
-    renderKPIs();
-    renderSignalsTable();
-    renderEvidenceTable();
-    renderNeedsChart();
-    renderTier2();
+  // ------------------------------
+  // Export
+  // ------------------------------
+  function exportReport(){
+    const report = {
+      generated_at: new Date().toISOString(),
+      docs: state.docs.map(d=>({name:d.name, pages:d.pages, type:d.type})),
+      geographies: {
+        counties: Array.from(state.geo.county),
+        zips: Array.from(state.geo.zip),
+        tracts: Array.from(state.geo.tract)
+      },
+      stakeholders: Array.from(state.stakeholders),
+      tier1_findings: state.findings,
+      tier2_opportunities: state.opportunities,
+      selected_opportunity: state.selectedOpp
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "chna_cra_dashboard_report.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    log("Exported JSON report");
   }
 
   // ------------------------------
@@ -1088,6 +1538,10 @@ Generated: ${new Date().toISOString()}`;
       document.querySelectorAll(".tabPane").forEach(p=>p.style.display="none");
       document.getElementById(id).style.display="block";
       log(`Switched to ${t.textContent.trim()}`);
+      // render gate messaging on entry
+      if(id==="t3" && !tier3Unlocked()){
+        log("Tier 3 opened while locked — proceed by improving Tier 2 readiness score (≥60).");
+      }
     });
   });
 
@@ -1097,13 +1551,11 @@ Generated: ${new Date().toISOString()}`;
   document.getElementById("btnReset").addEventListener("click", ()=>{
     state.docs = [];
     state.evidence = [];
-    state.signals = {
-      transportation_pct: null,
-      transportation_pct_age6574: null,
-      food_insecurity_pct: null,
-      housing_need_pct: null,
-      financial_need_pct: null,
-    };
+    state.geo = {zip:new Set(), county:new Set(), city:new Set(), tract:new Set()};
+    state.stakeholders = new Set();
+    state.findings = [];
+    state.opportunities = [];
+    state.selectedOpp = null;
     document.getElementById("fileInput").value = "";
     document.getElementById("auditOutput").textContent = "";
     setStatus("warn","No documents processed");
@@ -1112,18 +1564,29 @@ Generated: ${new Date().toISOString()}`;
   });
 
   document.getElementById("btnDemo").addEventListener("click", ()=>{
-    // Minimal demo scenario aligned to your example:
-    state.docs = [{name:"Demo_CHNA.pdf", type:"pdf", pages:1, textByPage:[
-      "In the past year, 2.7% reported transportation problems as a reason for delaying preventative care. " +
+    // Robust demo designed to showcase Tier 1–2 nuance and Tier 3 costing
+    const demoText =
+      "Health Care Access: 2.7% reported transportation problems as a reason for delaying preventative care. " +
       "By age, 65-74 reported transportation problems at 8.5%. " +
-      "Of surveyed patients, 7.5% reported food insecurity and 6% reported housing needs."
-    ]}];
+      "Of surveyed patients, 7.5% reported food insecurity and 6% reported housing needs. " +
+      "Delayed care drivers: could not get an appointment 29.3%, cost too much 21.3%. " +
+      "Service area includes Martin County and ZIP 56031. Prairie Lakes Transit and County Public Health were cited as partners.";
+    state.docs = [{name:"Robust_Demo_CHNA.pdf", type:"pdf", pages:1, textByPage:[demoText]}];
     state.evidence = [];
-    state.signals = {transportation_pct:null, transportation_pct_age6574:null, food_insecurity_pct:null, housing_need_pct:null, financial_need_pct:null};
-    scanDocText(state.docs[0]);
-    setStatus("good","Loaded demo data");
+    state.geo = {zip:new Set(), county:new Set(), city:new Set(), tract:new Set()};
+    state.stakeholders = new Set();
+    state.findings = [];
+    state.opportunities = [];
+    state.selectedOpp = null;
+
+    scanDoc(state.docs[0]);
+    computeMateriality();
+    buildOpportunities();
+    state.selectedOpp = state.opportunities.length ? state.opportunities[0] : null;
+
+    setStatus("good","Loaded robust demo");
     renderAll();
-    log("Loaded demo data");
+    log("Loaded robust demo data");
   });
 
   document.getElementById("btnProcess").addEventListener("click", async ()=>{
@@ -1133,13 +1596,17 @@ Generated: ${new Date().toISOString()}`;
       log("Process aborted: no files selected");
       return;
     }
-
     setStatus("warn", "Processing…");
     log(`Processing ${files.length} file(s)`);
 
+    // Reset state except log
     state.docs = [];
     state.evidence = [];
-    state.signals = {transportation_pct:null, transportation_pct_age6574:null, food_insecurity_pct:null, housing_need_pct:null, financial_need_pct:null};
+    state.geo = {zip:new Set(), county:new Set(), city:new Set(), tract:new Set()};
+    state.stakeholders = new Set();
+    state.findings = [];
+    state.opportunities = [];
+    state.selectedOpp = null;
 
     for(const f of files){
       try{
@@ -1155,13 +1622,17 @@ Generated: ${new Date().toISOString()}`;
         }
         const doc = {name: f.name, type: ext, pages: parsed.pages, textByPage: parsed.textByPage};
         state.docs.push(doc);
-        scanDocText(doc);
+        scanDoc(doc);
         log(`Parsed ${f.name} (${parsed.pages} page(s))`);
       }catch(err){
         console.error(err);
         log(`ERROR parsing ${f.name}: ${err?.message || err}`);
       }
     }
+
+    computeMateriality();
+    buildOpportunities();
+    state.selectedOpp = state.opportunities.length ? state.opportunities[0] : null;
 
     renderAll();
     if(state.docs.length === 0){
@@ -1173,12 +1644,39 @@ Generated: ${new Date().toISOString()}`;
 
   document.getElementById("btnRunModel").addEventListener("click", runModel);
   document.getElementById("btnAutofill").addEventListener("click", autoFillTier3);
+  document.getElementById("btnExport").addEventListener("click", exportReport);
+  document.getElementById("btnPickTop").addEventListener("click", ()=>{
+    pickTopOpportunityForTier3();
+    // switch to Tier 3 tab for convenience
+    document.querySelector('.tab[data-tab="t3"]').click();
+  });
 
-  // Initial render
-  document.getElementById("scopeBox").textContent = "Upload documents and process to populate scope guardrails and crosswalks.";
+  // ------------------------------
+  // Render all
+  // ------------------------------
+  function renderAll(){
+    renderStatus();
+    renderTier1KPIs();
+    renderMaterialityTable();
+    renderMaterialityChart();
+    renderGeoStake();
+    renderEvidenceTable();
+    renderTier2KPIs();
+    renderCRATable();
+    renderExamPrompts();
+
+    // Gate
+    const unlocked = tier3Unlocked();
+    const dot = document.getElementById("gateDot");
+    dot.classList.remove("good","bad");
+    if(unlocked){ dot.classList.add("good"); }
+  }
+
+  // Initial
   document.getElementById("auditLog").textContent = "";
+  setStatus("warn","No documents processed");
+  log("Dashboard loaded (v3)");
   renderAll();
-  log("Dashboard loaded");
 </script>
 </body>
 </html>
