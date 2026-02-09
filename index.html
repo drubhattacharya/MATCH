@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CHNA–CRA Navigation Dashboard (Disparities, Access, Performance)</title>
+
+  <!-- Dependencies (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#101a33;
+      --panel2:#0f1730;
+      --text:#e8eefc;
+      --muted:#a9b6d6;
+      --accent:#6aa7ff;
+      --good:#2bd4a6;
+      --warn:#ffcc66;
+      --bad:#ff6a8b;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background: radial-gradient(1000px 700px at 10% 0%, rgba(106,167,255,.18), transparent 60%),
+                  radial-gradient(900px 650px at 90% 10%, rgba(43,212,166,.14), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:28px 22px 10px;
+      max-width:1240px;
+      margin:0 auto;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:24px;
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      color:var(--muted);
+      margin:0;
+      line-height:1.35;
+      max-width:1000px;
+    }
+    .wrap{
+      max-width:1240px;
+      margin:0 auto;
+      padding:16px 22px 40px;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:16px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .left{
+      padding:14px;
+      position:sticky;
+      top:16px;
+      height:calc(100vh - 32px);
+      overflow:auto;
+    }
+    .right{
+      padding:14px;
+      min-height:720px;
+    }
+    .sectionTitle{
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:var(--muted);
+      margin:8px 6px 10px;
+    }
+    .uploader{
+      padding:12px;
+      background:rgba(255,255,255,.03);
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius:12px;
+      margin-bottom:12px;
+    }
+    .uploader input{width:100%}
+    .small{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+      margin-top:8px;
+    }
+    .btnRow{
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    button{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      padding:10px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:600;
+      transition:.15s;
+    }
+    button:hover{background:rgba(255,255,255,.09)}
+    button.primary{
+      border-color: rgba(106,167,255,.45);
+      background: rgba(106,167,255,.12);
+    }
+    button.primary:hover{background:rgba(106,167,255,.18)}
+    button.danger{
+      border-color: rgba(255,106,139,.35);
+      background: rgba(255,106,139,.10);
+    }
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+      margin:4px 6px 0;
+      user-select:none;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:999px;background:var(--warn);
+      box-shadow:0 0 0 3px rgba(255,204,102,.15);
+    }
+    .dot.good{background:var(--good); box-shadow:0 0 0 3px rgba(43,212,166,.14);}
+    .dot.bad{background:var(--bad); box-shadow:0 0 0 3px rgba(255,106,139,.14);}
+    .tabs{
+      display:flex;
+      gap:8px;
+      padding:10px;
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .tab{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid transparent;
+      color:var(--muted);
+      cursor:pointer;
+      font-weight:700;
+      transition:.15s;
+      user-select:none;
+    }
+    .tab.active{
+      color:var(--text);
+      border-color: rgba(106,167,255,.35);
+      background: rgba(106,167,255,.10);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:12px;
+    }
+    .kpi{
+      grid-column: span 4;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+    }
+    .kpi .label{
+      font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.10em;
+    }
+    .kpi .value{
+      margin-top:6px;
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .kpi .hint{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+    .panel{
+      grid-column: span 12;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+    }
+    .panel h2{
+      font-size:16px;
+      margin:0 0 8px;
+    }
+    .panel .sub{
+      color:var(--muted);
+      margin:0 0 12px;
+      font-size:12.5px;
+      line-height:1.45;
+    }
+    .twoCol{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:12px;
+    }
+    .table{
+      width:100%;
+      border-collapse:collapse;
+      overflow:hidden;
+      border-radius:12px;
+      border:1px solid var(--border);
+    }
+    .table th, .table td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:12.5px;
+      vertical-align:top;
+    }
+    .table th{
+      text-align:left;
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      background:rgba(255,255,255,.03);
+    }
+    .table tr:last-child td{border-bottom:none}
+    .mono{font-family:var(--mono)}
+    .codebox{
+      background:rgba(0,0,0,.22);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      font-family:var(--mono);
+      font-size:12px;
+      color:#dfe7ff;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      font-size:11px;
+      color:var(--muted);
+      background:rgba(255,255,255,.04);
+      margin-left:8px;
+    }
+    .inputs{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+      margin-top:8px;
+    }
+    .field{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+    }
+    .field label{
+      display:block;
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:6px;
+    }
+    .field input, .field select{
+      width:100%;
+      padding:10px 10px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+    }
+    .field input:focus, .field select:focus{border-color: rgba(106,167,255,.55);}
+    .footerNote{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.4;
+    }
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .log{
+      max-height:230px;
+      overflow:auto;
+      font-family:var(--mono);
+      font-size:11.5px;
+      background:rgba(0,0,0,.20);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      white-space:pre-wrap;
+    }
+    .note{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,204,102,.25);
+      background:rgba(255,204,102,.08);
+      color:#ffe5b3;
+      font-size:12.5px;
+      line-height:1.4;
+    }
+    @media (max-width: 1100px){
+      .wrap{grid-template-columns: 1fr}
+      .left{position:relative; height:auto}
+      .kpi{grid-column: span 6}
+      .twoCol{grid-template-columns:1fr}
+      .split{grid-template-columns:1fr}
+    }
+    @media (max-width: 620px){
+      .kpi{grid-column: span 12}
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>CHNA–CRA Navigation Dashboard <span class="badge">Disparities • Access • Performance</span></h1>
+  <p class="subtitle">
+    Upload CHNA and related documents to generate a structured view of disparities signals, CRA-aligned opportunities, and
+    advanced Tier 3 impact modeling with audit-ready outputs.
+  </p>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: Controls + status -->
+  <aside class="card left">
+    <div class="sectionTitle">Upload</div>
+    <div class="uploader">
+      <input id="fileInput" type="file" multiple accept=".pdf,.txt"/>
+      <div class="small">
+        Recommended: CHNA (PDF), Schedule H (PDF), CRA Performance Evaluation (PDF), and any supporting memos (TXT).
+        PDFs are processed locally in your browser (no server required).
+      </div>
+      <div class="btnRow">
+        <button class="primary" id="btnProcess">Process Files</button>
+        <button id="btnDemo">Load Demo Data</button>
+        <button class="danger" id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="sectionTitle">Status</div>
+    <div class="pill"><span id="statusDot" class="dot"></span><span id="statusText">No documents processed</span></div>
+    <div class="pill"><span class="dot good"></span><span><span class="mono" id="docsCount">0</span> document(s)</span></div>
+    <div class="pill"><span class="dot"></span><span><span class="mono" id="evidenceCount">0</span> evidence snippets</span></div>
+
+    <div class="sectionTitle">Audit Trail</div>
+    <div id="auditLog" class="log"></div>
+
+    <div class="sectionTitle">How to Use</div>
+    <div class="note">
+      <b>Tier 1:</b> Disparities signal scan (from CHNA language and tables).<br/>
+      <b>Tier 2:</b> CHNA → CRA alignment crosswalk (eligibility + scope logic).<br/>
+      <b>Tier 3:</b> Impact modeling & ROI (auto-filled when possible), plus export-ready audit notes.
+    </div>
+
+    <div class="footerNote">
+      Tip: If a PDF is scanned (image-only), browser text extraction may be limited. In that case, upload a text version or a
+      non-scanned PDF for stronger Tier 3 automation.
+    </div>
+  </aside>
+
+  <!-- RIGHT: Main dashboard -->
+  <main class="card right">
+    <div class="tabs">
+      <div class="tab active" data-tab="t1">Tier 1 — Signal Scan</div>
+      <div class="tab" data-tab="t2">Tier 2 — Alignment</div>
+      <div class="tab" data-tab="t3">Tier 3 — Modeling</div>
+    </div>
+
+    <!-- Tier 1 -->
+    <section id="t1" class="tabPane">
+      <div class="grid">
+        <div class="kpi">
+          <div class="label">Transportation barrier</div>
+          <div class="value" id="kpiTransport">—</div>
+          <div class="hint" id="hintTransport">Upload a CHNA to detect transportation-related percentages.</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Food insecurity</div>
+          <div class="value" id="kpiFood">—</div>
+          <div class="hint" id="hintFood">Detected from text like “food insecurity” and nearby % values.</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Housing need</div>
+          <div class="value" id="kpiHousing">—</div>
+          <div class="hint" id="hintHousing">Detected from text like “housing needs” and nearby % values.</div>
+        </div>
+
+        <div class="panel">
+          <h2>Disparities Signals (Extracted)</h2>
+          <p class="sub">
+            The engine scans uploaded documents for disparities signals commonly used in CHNAs (access barriers, delayed care drivers,
+            and basic-needs indicators). Click Tier 2 to see how each signal can map to CRA-eligible activities.
+          </p>
+          <div class="twoCol">
+            <div>
+              <table class="table" id="signalsTable">
+                <thead>
+                  <tr>
+                    <th>Signal</th>
+                    <th>Detected Value</th>
+                    <th>Population / Segment</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="4" class="small">No signals detected yet. Upload documents and click <b>Process Files</b>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <canvas id="needsBar" height="220"></canvas>
+              <div class="small" style="margin-top:10px">
+                Chart shows detected basic-needs percentages (when found). If the CHNA includes segmented tables (e.g., age bands),
+                the system will also attempt to detect and display those under Tier 3.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Evidence Snippets</h2>
+          <p class="sub">Traceability matters. This list preserves the text segments that triggered each signal (document + page).</p>
+          <table class="table" id="evidenceTable">
+            <thead>
+              <tr>
+                <th>Signal</th>
+                <th>Snippet</th>
+                <th>Doc</th>
+                <th>Page</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" class="small">No evidence captured yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tier 2 -->
+    <section id="t2" class="tabPane" style="display:none">
+      <div class="grid">
+        <div class="panel">
+          <h2>CHNA → CRA Alignment Crosswalk</h2>
+          <p class="sub">
+            This tier translates detected disparities signals into CRA-aligned activity patterns and eligibility logic.
+            It also prompts for what an examiner typically expects: performance context, scope, responsiveness, and documentation.
+          </p>
+
+          <table class="table" id="crosswalkTable">
+            <thead>
+              <tr>
+                <th>Disparities Signal</th>
+                <th>Suggested Activity Pattern</th>
+                <th>CRA Category</th>
+                <th>Evidence to Retain</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" class="small">No signals detected yet. Return to Tier 1 and process documents.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Scope & Attribution Guardrails</h2>
+          <p class="sub">
+            Examiners evaluate activities in the assessment area (AA), broader statewide/regional area that includes the AA,
+            and sometimes at the institution level. Your file organization should be able to prove where the benefit lands.
+          </p>
+          <div class="split">
+            <div class="codebox" id="scopeBox"></div>
+            <div>
+              <h3 style="margin:0 0 8px; font-size:14px;">Tier 2 Checklist</h3>
+              <ul class="small" style="margin:0; padding-left:18px; line-height:1.5">
+                <li>Identify the documented need/disparity and the affected population segment.</li>
+                <li>Confirm the activity pattern and the CRA category.</li>
+                <li>Confirm geographic attribution (AA vs statewide/regional vs institution-level).</li>
+                <li>List required documentation artifacts (contracts, invoices, beneficiary counts, narrative).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tier 3 -->
+    <section id="t3" class="tabPane" style="display:none">
+      <div class="grid">
+        <div class="panel">
+          <h2>Tier 3 Impact Modeling (NEMT / Missed Appointments Example)</h2>
+          <p class="sub">
+            Upload documents to auto-detect baseline percentages where possible, then run scenario modeling.
+            Outputs are structured for operational planning and exam-ready documentation.
+          </p>
+
+          <div class="inputs">
+            <div class="field">
+              <label>Annual appointments (target population)</label>
+              <input id="inpAnnualAppts" type="number" min="0" value="9000"/>
+            </div>
+            <div class="field">
+              <label>Baseline no-show rate (%)</label>
+              <input id="inpNoShow" type="number" min="0" max="100" step="0.1" value="15"/>
+            </div>
+            <div class="field">
+              <label>% no-shows attributable to transportation (%)</label>
+              <input id="inpTransportShare" type="number" min="0" max="100" step="0.1" value="25"/>
+            </div>
+            <div class="field">
+              <label>Expected reduction in transport-related no-shows (%)</label>
+              <input id="inpReduction" type="number" min="0" max="100" step="0.1" value="30"/>
+            </div>
+            <div class="field">
+              <label>Average net revenue per completed visit ($)</label>
+              <input id="inpNetRev" type="number" min="0" step="1" value="120"/>
+            </div>
+            <div class="field">
+              <label>Program cost per ride / intervention ($)</label>
+              <input id="inpCost" type="number" min="0" step="1" value="35"/>
+            </div>
+            <div class="field">
+              <label>Rides per prevented no-show</label>
+              <input id="inpRidesPer" type="number" min="0.1" step="0.1" value="1.2"/>
+            </div>
+            <div class="field">
+              <label>Time horizon (months)</label>
+              <select id="inpMonths">
+                <option value="12">12</option>
+                <option value="24">24</option>
+                <option value="36">36</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btnRow" style="margin-top:12px">
+            <button class="primary" id="btnRunModel">Run Model</button>
+            <button id="btnAutofill">Auto-fill from detected signals</button>
+          </div>
+
+          <div class="grid" style="margin-top:12px">
+            <div class="kpi">
+              <div class="label">Prevented no-shows (annualized)</div>
+              <div class="value" id="kpiPrevented">—</div>
+              <div class="hint">Derived from baseline no-show rate × transport share × reduction.</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Net financial impact ($/year)</div>
+              <div class="value" id="kpiNetImpact">—</div>
+              <div class="hint">Added net revenue minus program costs (annualized).</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Estimated rides supported (annualized)</div>
+              <div class="value" id="kpiRides">—</div>
+              <div class="hint">Rides = prevented no-shows × rides-per-prevented no-show.</div>
+            </div>
+
+            <div class="panel" style="grid-column: span 12;">
+              <div class="twoCol">
+                <div>
+                  <canvas id="roiBar" height="220"></canvas>
+                </div>
+                <div>
+                  <canvas id="trendLine" height="220"></canvas>
+                </div>
+              </div>
+              <div class="small" style="margin-top:10px">
+                The charts visualize (1) benefits vs costs and (2) a simple month-by-month projection over the chosen horizon.
+                These can be exported as images via browser “Save image” on the chart.
+              </div>
+            </div>
+
+            <div class="panel">
+              <h2>Audit-Ready Output (Copy/Paste)</h2>
+              <p class="sub">This block is designed to be dropped into an internal memo, CRA file, or implementation plan appendix.</p>
+              <div id="auditOutput" class="codebox"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ------------------------------
+  // Utilities
+  // ------------------------------
+  const logEl = document.getElementById("auditLog");
+  function log(msg){
+    const ts = new Date().toISOString().replace('T',' ').replace('Z','');
+    logEl.textContent = `[${ts}] ${msg}\n` + logEl.textContent;
+  }
+
+  function setStatus(kind, text){
+    const dot = document.getElementById("statusDot");
+    dot.classList.remove("good","bad");
+    if(kind === "good") dot.classList.add("good");
+    if(kind === "bad") dot.classList.add("bad");
+    document.getElementById("statusText").textContent = text;
+  }
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+  function fmtPct(x){ return (x==null || isNaN(x)) ? "—" : `${x.toFixed(1)}%`; }
+  function fmtInt(x){ return (x==null || isNaN(x)) ? "—" : `${Math.round(x).toLocaleString()}`; }
+  function fmtMoney(x){
+    if(x==null || isNaN(x)) return "—";
+    const sign = x < 0 ? "-" : "";
+    const v = Math.abs(x);
+    return `${sign}$${v.toLocaleString(undefined,{maximumFractionDigits:0})}`;
+  }
+
+  // ------------------------------
+  // State
+  // ------------------------------
+  const state = {
+    docs: [],             // {name, type, pages, textByPage[]}
+    evidence: [],         // {signal, snippet, doc, page}
+    signals: {            // extracted best values
+      transportation_pct: null,
+      transportation_pct_age6574: null,
+      food_insecurity_pct: null,
+      housing_need_pct: null,
+      financial_need_pct: null,
+    }
+  };
+
+  // ------------------------------
+  // PDF.js setup
+  // ------------------------------
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  async function extractPdfText(file){
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    const numPages = pdf.numPages;
+    const textByPage = [];
+    for(let p=1; p<=numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const strings = content.items.map(it => it.str).filter(Boolean);
+      // Keep as a single line-ish block
+      const text = strings.join(" ").replace(/\s+/g,' ').trim();
+      textByPage.push(text);
+    }
+    return {pages: numPages, textByPage};
+  }
+
+  async function extractTxt(file){
+    const text = await file.text();
+    return {pages: 1, textByPage: [text.replace(/\s+/g,' ').trim()]};
+  }
+
+  // ------------------------------
+  // Signal extraction heuristics
+  // ------------------------------
+  function capture(signal, value, snippet, doc, page){
+    // keep best: prefer non-null, and for same signal keep first unless new seems more specific
+    state.evidence.push({signal, snippet, doc, page});
+    // Update best values
+    if(signal === "Transportation barrier (%)"){
+      if(state.signals.transportation_pct == null) state.signals.transportation_pct = value;
+    }
+    if(signal === "Transportation barrier (65–74) (%)"){
+      state.signals.transportation_pct_age6574 = value; // allow overwrite if found
+    }
+    if(signal === "Food insecurity (%)"){
+      if(state.signals.food_insecurity_pct == null) state.signals.food_insecurity_pct = value;
+    }
+    if(signal === "Housing need (%)"){
+      if(state.signals.housing_need_pct == null) state.signals.housing_need_pct = value;
+    }
+    if(signal === "Financial need (%)"){
+      if(state.signals.financial_need_pct == null) state.signals.financial_need_pct = value;
+    }
+  }
+
+  function findPercentNear(text, keyword){
+    // Look for "keyword ... 12.3%" within ~120 chars
+    const re = new RegExp(`${keyword}[\\s\\S]{0,120}?(\\d{1,2}(?:\\.\\d+)?)%`, "i");
+    const m = text.match(re);
+    if(!m) return null;
+    const val = parseFloat(m[1]);
+    if(isNaN(val)) return null;
+    return {val, snippet: m[0].slice(0,240)};
+  }
+
+  function findTransport6574(text){
+    // Look for a line that contains 65-74 and transportation and a %.
+    const re = /65\s*-\s*74[\s\S]{0,160}transportation[\s\S]{0,80}?(\d{1,2}(?:\.\d+)?)%/i;
+    const m = text.match(re);
+    if(!m) return null;
+    const val = parseFloat(m[1]);
+    if(isNaN(val)) return null;
+    return {val, snippet: m[0].slice(0,260)};
+  }
+
+  function scanDocText(doc){
+    for(let i=0; i<doc.textByPage.length; i++){
+      const t = doc.textByPage[i];
+
+      // Transportation (general)
+      const tr = findPercentNear(t, "transportation");
+      if(tr) capture("Transportation barrier (%)", tr.val, tr.snippet, doc.name, i+1);
+
+      // Transportation in 65–74
+      const tr6574 = findTransport6574(t);
+      if(tr6574) capture("Transportation barrier (65–74) (%)", tr6574.val, tr6574.snippet, doc.name, i+1);
+
+      // Food insecurity
+      const fi = findPercentNear(t, "food insecurity");
+      if(fi) capture("Food insecurity (%)", fi.val, fi.snippet, doc.name, i+1);
+
+      // Housing needs
+      const hn = findPercentNear(t, "housing needs?");
+      if(hn) capture("Housing need (%)", hn.val, hn.snippet, doc.name, i+1);
+
+      // Financial needs
+      const fn = findPercentNear(t, "financial needs?");
+      if(fn) capture("Financial need (%)", fn.val, fn.snippet, doc.name, i+1);
+    }
+  }
+
+  // ------------------------------
+  // Rendering
+  // ------------------------------
+  let needsChart = null;
+  let roiChart = null;
+  let trendChart = null;
+
+  function renderStatus(){
+    document.getElementById("docsCount").textContent = state.docs.length;
+    document.getElementById("evidenceCount").textContent = state.evidence.length;
+    if(state.docs.length === 0){
+      setStatus("warn", "No documents processed");
+    }else{
+      setStatus("good", `Processed ${state.docs.length} document(s)`);
+    }
+  }
+
+  function renderKPIs(){
+    const t = state.signals.transportation_pct;
+    const t6574 = state.signals.transportation_pct_age6574;
+
+    const transportValue = (t6574!=null)
+      ? `${fmtPct(t)} (overall) • ${fmtPct(t6574)} (65–74)`
+      : fmtPct(t);
+
+    document.getElementById("kpiTransport").textContent = transportValue || "—";
+    document.getElementById("kpiFood").textContent = fmtPct(state.signals.food_insecurity_pct);
+    document.getElementById("kpiHousing").textContent = fmtPct(state.signals.housing_need_pct);
+
+    document.getElementById("hintTransport").textContent =
+      (t!=null) ? "Detected from uploaded documents (keyword: transportation)." : "Upload a CHNA to detect transportation-related percentages.";
+    document.getElementById("hintFood").textContent =
+      (state.signals.food_insecurity_pct!=null) ? "Detected from uploaded documents (keyword: food insecurity)." : "Detected from text like “food insecurity” and nearby % values.";
+    document.getElementById("hintHousing").textContent =
+      (state.signals.housing_need_pct!=null) ? "Detected from uploaded documents (keyword: housing needs)." : "Detected from text like “housing needs” and nearby % values.";
+  }
+
+  function renderSignalsTable(){
+    const tbody = document.querySelector("#signalsTable tbody");
+    tbody.innerHTML = "";
+    const rows = [];
+
+    if(state.signals.transportation_pct != null){
+      rows.push(["Transportation barrier", fmtPct(state.signals.transportation_pct), "General population / survey respondents", bestSourceFor("Transportation barrier (%)")]);
+    }
+    if(state.signals.transportation_pct_age6574 != null){
+      rows.push(["Transportation barrier", fmtPct(state.signals.transportation_pct_age6574), "Age 65–74", bestSourceFor("Transportation barrier (65–74) (%)")]);
+    }
+    if(state.signals.food_insecurity_pct != null){
+      rows.push(["Food insecurity", fmtPct(state.signals.food_insecurity_pct), "General population / survey respondents", bestSourceFor("Food insecurity (%)")]);
+    }
+    if(state.signals.housing_need_pct != null){
+      rows.push(["Housing need", fmtPct(state.signals.housing_need_pct), "General population / survey respondents", bestSourceFor("Housing need (%)")]);
+    }
+    if(state.signals.financial_need_pct != null){
+      rows.push(["Financial need", fmtPct(state.signals.financial_need_pct), "General population / survey respondents", bestSourceFor("Financial need (%)")]);
+    }
+
+    if(rows.length === 0){
+      tbody.innerHTML = `<tr><td colspan="4" class="small">No signals detected yet. Upload documents and click <b>Process Files</b>.</td></tr>`;
+      return;
+    }
+    for(const r of rows){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${r[0]}</td><td class="mono">${r[1]}</td><td>${r[2]}</td><td class="mono">${r[3]}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function bestSourceFor(signalName){
+    // Return "DocName p.X" for first evidence of signal
+    const e = state.evidence.find(x => x.signal === signalName);
+    if(!e) return "—";
+    return `${e.doc} p.${e.page}`;
+  }
+
+  function renderEvidenceTable(){
+    const tbody = document.querySelector("#evidenceTable tbody");
+    tbody.innerHTML = "";
+    if(state.evidence.length === 0){
+      tbody.innerHTML = `<tr><td colspan="4" class="small">No evidence captured yet.</td></tr>`;
+      return;
+    }
+    // Show up to 25 most recent
+    const slice = state.evidence.slice(-25).reverse();
+    for(const e of slice){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${e.signal}</td>
+        <td>${escapeHtml(e.snippet)}</td>
+        <td class="mono">${escapeHtml(e.doc)}</td>
+        <td class="mono">${e.page}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function escapeHtml(s){
+    return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  function renderNeedsChart(){
+    const ctx = document.getElementById("needsBar");
+    const labels = [];
+    const vals = [];
+    if(state.signals.transportation_pct != null){ labels.push("Transportation"); vals.push(state.signals.transportation_pct); }
+    if(state.signals.food_insecurity_pct != null){ labels.push("Food insecurity"); vals.push(state.signals.food_insecurity_pct); }
+    if(state.signals.housing_need_pct != null){ labels.push("Housing need"); vals.push(state.signals.housing_need_pct); }
+    if(state.signals.financial_need_pct != null){ labels.push("Financial need"); vals.push(state.signals.financial_need_pct); }
+
+    if(needsChart) needsChart.destroy();
+    needsChart = new Chart(ctx, {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Detected %", data: vals }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: "#a9b6d6" }, grid: { color: "rgba(255,255,255,.06)" } },
+          y: { ticks: { color: "#a9b6d6" }, grid: { color: "rgba(255,255,255,.06)" }, beginAtZero: true, max: 100 }
+        }
+      }
+    });
+  }
+
+  function renderTier2(){
+    // Crosswalk signals -> CRA-aligned patterns (compact curated set, editable later)
+    const tbody = document.querySelector("#crosswalkTable tbody");
+    tbody.innerHTML = "";
+
+    const items = [];
+    if(state.signals.transportation_pct != null || state.signals.transportation_pct_age6574 != null){
+      items.push({
+        signal: "Transportation barrier to medical / preventive care",
+        pattern: "Non-emergency medical transportation (NEMT): rides to appointments; scheduling + reminders; targeted to LMI segments",
+        category: "Community services (targeted to LMI) / Community development service",
+        evidence: "CHNA table showing transportation as barrier; program invoices; counts of rides; beneficiary profile; service area maps"
+      });
+    }
+    if(state.signals.food_insecurity_pct != null){
+      items.push({
+        signal: "Food insecurity affecting access to health",
+        pattern: "Food access supports: food shelf partnerships; medically-tailored food distribution; logistics for LMI households",
+        category: "Community services (targeted to LMI) / Qualified investments (as applicable)",
+        evidence: "CHNA food insecurity %; partner MOU; distribution counts; eligibility criteria; outcome measures (visit adherence)"
+      });
+    }
+    if(state.signals.housing_need_pct != null){
+      items.push({
+        signal: "Housing instability / housing need",
+        pattern: "Housing stabilization supports: referral infrastructure; short-term bridge support; facility-linked partnerships",
+        category: "Community development (affordable housing / community services) — depending on structure",
+        evidence: "CHNA housing need %; partner documentation; spend records; geographic target mapping; beneficiary definitions"
+      });
+    }
+
+    if(items.length === 0){
+      tbody.innerHTML = `<tr><td colspan="4" class="small">No signals detected yet. Return to Tier 1 and process documents.</td></tr>`;
+    }else{
+      for(const it of items){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${it.signal}</td>
+          <td>${it.pattern}</td>
+          <td>${it.category}</td>
+          <td>${it.evidence}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Scope box: pulled from your uploaded procedures, condensed into guardrails language
+    document.getElementById("scopeBox").textContent =
+`Scope & attribution guardrails (exam-ready):
+
+• Activities are evaluated at:
+  1) Specific Assessment Area (AA) — when the bank can demonstrate the activity benefited and was targeted to the AA.
+  2) State / Multistate MSA — when activities benefit or target two or more AAs or cover a state/multistate MSA.
+  3) Institution level — when activities benefit a broader regional area or nationwide scope.
+
+• Practical documentation rule:
+  Do not assign an activity to a specific AA or state unless the bank can demonstrate the activity benefited and was targeted to that AA/state.
+
+• Your portal should retain:
+  - Target population definition (e.g., LMI, specific neighborhoods/tracts)
+  - Service area geography (maps / tract lists)
+  - Activity records (contracts, invoices, partner attestations)
+  - Beneficiary counts + narrative of responsiveness to documented need`;
+  }
+
+  function autoFillTier3(){
+    // Try to infer baseline no-show attributable to transportation from detected CHNA transport barrier
+    // If CHNA indicates "transportation problems" as reason for delayed care, we can use it as proxy for transport share of barriers.
+    if(state.signals.transportation_pct != null){
+      // Use as a rough proxy (capped to avoid extreme)
+      const proxy = clamp(state.signals.transportation_pct * 3.0, 5, 60); // heuristic
+      document.getElementById("inpTransportShare").value = proxy.toFixed(1);
+      log(`Tier 3 auto-fill: transport share set to ${proxy.toFixed(1)}% (proxy derived from detected transportation %)`);
+    }
+    if(state.signals.transportation_pct_age6574 != null){
+      // Increase annual appts proxy for seniors only scenario
+      document.getElementById("inpAnnualAppts").value = 9000;
+      log(`Tier 3 auto-fill: detected a 65–74 transport signal; consider modeling a senior-focused service line.`);
+    }
+  }
+
+  function runModel(){
+    const annualAppts = parseFloat(document.getElementById("inpAnnualAppts").value || "0");
+    const noShow = parseFloat(document.getElementById("inpNoShow").value || "0")/100;
+    const transportShare = parseFloat(document.getElementById("inpTransportShare").value || "0")/100;
+    const reduction = parseFloat(document.getElementById("inpReduction").value || "0")/100;
+    const netRev = parseFloat(document.getElementById("inpNetRev").value || "0");
+    const cost = parseFloat(document.getElementById("inpCost").value || "0");
+    const ridesPer = parseFloat(document.getElementById("inpRidesPer").value || "1");
+    const months = parseInt(document.getElementById("inpMonths").value || "12", 10);
+
+    const baselineNoShows = annualAppts * noShow;
+    const transportNoShows = baselineNoShows * transportShare;
+    const prevented = transportNoShows * reduction;
+
+    const rides = prevented * ridesPer;
+    const benefit = prevented * netRev;
+    const programCost = rides * cost;
+    const netImpact = benefit - programCost;
+
+    document.getElementById("kpiPrevented").textContent = fmtInt(prevented);
+    document.getElementById("kpiRides").textContent = fmtInt(rides);
+    document.getElementById("kpiNetImpact").textContent = fmtMoney(netImpact);
+
+    // ROI bar chart
+    const ctx1 = document.getElementById("roiBar");
+    if(roiChart) roiChart.destroy();
+    roiChart = new Chart(ctx1, {
+      type:"bar",
+      data:{
+        labels:["Annual benefit","Annual program cost","Net impact"],
+        datasets:[{label:"$", data:[benefit, programCost, netImpact]}]
+      },
+      options:{
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}},
+          y:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}, beginAtZero:true}
+        }
+      }
+    });
+
+    // Trend line (monthly)
+    const ctx2 = document.getElementById("trendLine");
+    if(trendChart) trendChart.destroy();
+    const mPrevented = prevented / 12;
+    const mBenefit = benefit / 12;
+    const mCost = programCost / 12;
+    const labels = Array.from({length: months}, (_,i)=>`M${i+1}`);
+    const netSeries = labels.map((_,i)=>(mBenefit - mCost));
+    const cumSeries = [];
+    let cum = 0;
+    for(const v of netSeries){ cum += v; cumSeries.push(cum); }
+
+    trendChart = new Chart(ctx2, {
+      type:"line",
+      data:{
+        labels,
+        datasets:[
+          {label:"Monthly net impact", data: netSeries, tension:.25},
+          {label:"Cumulative net impact", data: cumSeries, tension:.25}
+        ]
+      },
+      options:{
+        plugins:{legend:{labels:{color:"#a9b6d6"}}},
+        scales:{
+          x:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}},
+          y:{ticks:{color:"#a9b6d6"}, grid:{color:"rgba(255,255,255,.06)"}}
+        }
+      }
+    });
+
+    // Audit-ready output
+    const tOverall = state.signals.transportation_pct;
+    const t6574 = state.signals.transportation_pct_age6574;
+
+    const srcTransport = bestSourceFor("Transportation barrier (%)");
+    const srcTransport6574 = bestSourceFor("Transportation barrier (65–74) (%)");
+
+    const auditText =
+`TIER 3 IMPACT MODEL — NEMT / MISSED APPOINTMENT MITIGATION
+
+1) Documented disparities signal(s):
+   - Transportation barrier: ${tOverall!=null ? fmtPct(tOverall) : "Not detected"} (source: ${srcTransport})
+   - Transportation barrier (age 65–74): ${t6574!=null ? fmtPct(t6574) : "Not detected"} (source: ${srcTransport6574})
+
+2) Baseline operational assumptions:
+   - Annual appointments (target population): ${fmtInt(annualAppts)}
+   - Baseline no-show rate: ${(noShow*100).toFixed(1)}%
+   - Share of no-shows attributable to transportation: ${(transportShare*100).toFixed(1)}%
+   - Expected reduction in transport-related no-shows (intervention effect): ${(reduction*100).toFixed(1)}%
+   - Net revenue per completed visit (after variable costs): ${fmtMoney(netRev)}
+   - Program cost per ride / intervention: ${fmtMoney(cost)}
+   - Rides per prevented no-show: ${ridesPer.toFixed(2)}
+
+3) Modeled annual impact:
+   - Baseline no-shows: ${fmtInt(baselineNoShows)}
+   - Transport-related no-shows: ${fmtInt(transportNoShows)}
+   - Prevented no-shows (annualized): ${fmtInt(prevented)}
+   - Estimated rides supported (annualized): ${fmtInt(rides)}
+   - Annual benefit (revenue preserved / recovered): ${fmtMoney(benefit)}
+   - Annual program cost: ${fmtMoney(programCost)}
+   - Net annual impact: ${fmtMoney(netImpact)}
+
+4) Documentation package to retain (audit-ready):
+   - CHNA excerpt(s) documenting transportation barrier + affected segment(s) + geography (as applicable)
+   - Program design: service model, eligibility, service area, partner agreements
+   - Funding records: invoices, contracts, payments, attestations
+   - Output counts: rides provided, completed visits supported, LMI/eligible population counts
+   - Monitoring: monthly/quarterly tracking + variance notes + corrective actions
+
+Generated: ${new Date().toISOString()}`;
+    document.getElementById("auditOutput").textContent = auditText;
+
+    log(`Tier 3 model run: prevented=${Math.round(prevented)}, netImpact=${Math.round(netImpact)}`);
+  }
+
+  function renderAll(){
+    renderStatus();
+    renderKPIs();
+    renderSignalsTable();
+    renderEvidenceTable();
+    renderNeedsChart();
+    renderTier2();
+  }
+
+  // ------------------------------
+  // Tabs
+  // ------------------------------
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      const id = t.dataset.tab;
+      document.querySelectorAll(".tabPane").forEach(p=>p.style.display="none");
+      document.getElementById(id).style.display="block";
+      log(`Switched to ${t.textContent.trim()}`);
+    });
+  });
+
+  // ------------------------------
+  // Buttons
+  // ------------------------------
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    state.docs = [];
+    state.evidence = [];
+    state.signals = {
+      transportation_pct: null,
+      transportation_pct_age6574: null,
+      food_insecurity_pct: null,
+      housing_need_pct: null,
+      financial_need_pct: null,
+    };
+    document.getElementById("fileInput").value = "";
+    document.getElementById("auditOutput").textContent = "";
+    setStatus("warn","No documents processed");
+    renderAll();
+    log("Reset dashboard state");
+  });
+
+  document.getElementById("btnDemo").addEventListener("click", ()=>{
+    // Minimal demo scenario aligned to your example:
+    state.docs = [{name:"Demo_CHNA.pdf", type:"pdf", pages:1, textByPage:[
+      "In the past year, 2.7% reported transportation problems as a reason for delaying preventative care. " +
+      "By age, 65-74 reported transportation problems at 8.5%. " +
+      "Of surveyed patients, 7.5% reported food insecurity and 6% reported housing needs."
+    ]}];
+    state.evidence = [];
+    state.signals = {transportation_pct:null, transportation_pct_age6574:null, food_insecurity_pct:null, housing_need_pct:null, financial_need_pct:null};
+    scanDocText(state.docs[0]);
+    setStatus("good","Loaded demo data");
+    renderAll();
+    log("Loaded demo data");
+  });
+
+  document.getElementById("btnProcess").addEventListener("click", async ()=>{
+    const files = Array.from(document.getElementById("fileInput").files || []);
+    if(files.length === 0){
+      setStatus("bad","No files selected");
+      log("Process aborted: no files selected");
+      return;
+    }
+
+    setStatus("warn", "Processing…");
+    log(`Processing ${files.length} file(s)`);
+
+    state.docs = [];
+    state.evidence = [];
+    state.signals = {transportation_pct:null, transportation_pct_age6574:null, food_insecurity_pct:null, housing_need_pct:null, financial_need_pct:null};
+
+    for(const f of files){
+      try{
+        const ext = (f.name.split(".").pop() || "").toLowerCase();
+        let parsed = null;
+        if(ext === "pdf"){
+          parsed = await extractPdfText(f);
+        }else if(ext === "txt"){
+          parsed = await extractTxt(f);
+        }else{
+          log(`Skipped unsupported file type: ${f.name}`);
+          continue;
+        }
+        const doc = {name: f.name, type: ext, pages: parsed.pages, textByPage: parsed.textByPage};
+        state.docs.push(doc);
+        scanDocText(doc);
+        log(`Parsed ${f.name} (${parsed.pages} page(s))`);
+      }catch(err){
+        console.error(err);
+        log(`ERROR parsing ${f.name}: ${err?.message || err}`);
+      }
+    }
+
+    renderAll();
+    if(state.docs.length === 0){
+      setStatus("bad","No supported documents processed");
+    }else{
+      setStatus("good", `Processed ${state.docs.length} document(s)`);
+    }
+  });
+
+  document.getElementById("btnRunModel").addEventListener("click", runModel);
+  document.getElementById("btnAutofill").addEventListener("click", autoFillTier3);
+
+  // Initial render
+  document.getElementById("scopeBox").textContent = "Upload documents and process to populate scope guardrails and crosswalks.";
+  document.getElementById("auditLog").textContent = "";
+  renderAll();
+  log("Dashboard loaded");
+</script>
+</body>
+</html>
