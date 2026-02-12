@@ -383,8 +383,8 @@
           </div>
 
           <div class="btnbar" style="margin-top:10px;">
-            <button class="primary" id="btn_run_roi">Run ROI</button>
-            <button class="secondary" id="btn_autofill_roi">Auto‑fill transport share from Tier 1</button>
+            <button class="primary" id="btn_run_roi" onclick="render_roi()">Run ROI</button>
+            <button class="secondary" id="btn_autofill_roi" onclick="autofill_share_from_tier1()">Auto‑fill transport share from Tier 1</button>
           </div>
 
           <div class="kpis" style="margin-top:10px;">
@@ -1776,6 +1776,9 @@ Generated: ${new Date().toISOString()}`;
       showOk("No Tier 1 transportation signal detected; defaults unchanged.");
     }
   }
+
+  window.render_roi = render_roi;
+  window.autofill_share_from_tier1 = autofill_share_from_tier1;
 
   function wire_roi_parity(){
     const runBtn = document.getElementById("btn_run_roi");
