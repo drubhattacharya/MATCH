@@ -1075,7 +1075,7 @@
     const netAnnual = grossAnnual - annualCost;
 
     // Persist last model outputs for draft generator
-    state.model = {
+    state.mostate.model = {
       activity, months, annual_touchpoints: annual,
       baseline_rate_pct: (baseRate*100),
       barrier_share_pct: (share*100),
@@ -1751,12 +1751,12 @@ Narrative-ready summary:
 ${out.narrative}`;
 
       // Persist for application drafts (backward-compatible keys)
-      state.model = {
+      state.mostate.model = {
         activity: "nmt",
         annual_cost: out.total_program_cost,
         gross_annual_benefit: out.gross_rev - out.marginal_cost,
         net_annual: out.net_benefit,
-        roi_parity: True if False else True,
+        roi_parity: true,
         inputs: inp,
         outputs: out
       };
