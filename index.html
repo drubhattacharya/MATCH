@@ -170,13 +170,12 @@
     <div class="tabs" aria-label="Navigation tabs">
       <button class="tabbtn active" id="tab_t1" data-view="t1">Tier 1 — Materiality</button>
       <button class="tabbtn" id="tab_t2" data-view="t2">Tier 2 — CRA Readiness</button>
-      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — ROI & Break-even</button>
-      <button class="tabbtn" id="tab_drafts" data-view="drafts">Application Drafts</button>
+      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — Cost & ROI
+      <button class="tabbtn" id="tab_drafts" data-view="drafts">Application Drafts</button></button>
 
       <div class="gate">
         <span class="chip"><span id="gateDot" class="dot"></span> <span id="gateText">Tier 3 locked until Tier 2 score ≥ 60</span></span>
       </div>
-</div>
     </div>
   </div>
 </header>
@@ -339,129 +338,124 @@
         </div>
       </section>
 
-            <!-- Tier 3 -->
+      <!-- Tier 3 -->
       <section id="view_t3" class="view">
         <div class="callout">
-          <div style="font-weight:900;">Tier 3 — NEMT No‑Show ROI + CRA Impact (Excel‑Parity) + Break‑Even</div>
+          <div style="font-weight:900;">Tier 3 starts with the basic precursor question</div>
           <div class="small" style="margin-top:6px;">
-            Tier 3 mirrors the ROI logic of your Excel simulator (incremental margin approach). No uploads here.
-            Adjust inputs below (rates can be entered as decimals like 0.20 or percents like 20), then run ROI and break‑even.
+            <b>How much does the program cost?</b> Tier 3 computes total cost baseline (startup + fixed + variable) and then estimates ROI.
           </div>
         </div>
 
         <div class="card" style="box-shadow:none; margin-top:12px;">
-          <div class="callout">
-            <div style="font-weight:900;">Model definition (Excel‑parity)</div>
-            <div class="small" style="margin-top:6px;">
-              <b>Transport no‑shows</b> = Visits × No‑show rate × Transport share<br/>
-              <b>Prevented no‑shows</b> = Transport no‑shows × Mitigation rate<br/>
-              <b>Net benefit</b> = (Prevented × Net revenue) − (Prevented × Marginal clinical cost) − (Prevented × Trip cost) − (Trip cost × Overhead rate)
+          <div class="row">
+            <div class="field">
+              <label>Activity type</label>
+              <select id="inp_activity">
+                <option value="nmt">Transportation-to-care (NEMT)</option>
+                <option value="food">Food access supports</option>
+                <option value="care">Care navigation / referral infrastructure</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Transportation is always available and auto-selected when it is the top Tier 2 opportunity.</div>
+            </div>
+            <div class="field">
+              <label>Time horizon (months)</label>
+              <select id="inp_months">
+                <option value="12">12</option>
+                <option value="24">24</option>
+                <option value="36">36</option>
+              </select>
             </div>
           </div>
 
-          <div style="font-weight:900; margin:12px 0 6px;">A) Volume & Access Inputs (Health System)</div>
           <div class="row">
-            <div class="field"><label>Annual targeted outpatient visits</label><input id="a_visits" type="number" value="40000" min="0"/></div>
-            <div class="field"><label>Baseline no‑show rate (enter 0.20 or 20%)</label><input id="a_noshow" type="number" value="0.20" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>Share of no‑shows due to transportation (enter 0.30 or 30%)</label><input id="a_share" type="number" value="0.30" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>Avg net revenue per completed visit ($)</label><input id="a_netrev" type="number" value="225" min="0"/></div>
-            <div class="field"><label>Avg marginal clinical cost per completed visit ($)</label><input id="a_margc" type="number" value="90" min="0"/></div>
+            <div class="field"><label>Annual touchpoints (appointments)</label><input id="inp_annual" type="number" value="9000" min="0"/></div>
+            <div class="field"><label>Baseline disruption rate (%)</label><input id="inp_base" type="number" value="15" min="0" max="100" step="0.1"/></div>
+            <div class="field"><label>Share attributable to barrier (%)</label><input id="inp_share" type="number" value="25" min="0" max="100" step="0.1"/></div>
+            <div class="field"><label>Reduction in barrier disruptions (%)</label><input id="inp_red" type="number" value="30" min="0" max="100" step="0.1"/></div>
+            <div class="field"><label>Targeted coverage of eligible patients (%) <span class="mono" id="cov_readout">25%</span></label>
+              <input id="inp_cov" type="range" min="5" max="60" step="1" value="25"/>
+              <div class="small" style="margin-top:6px;">Scales the portion of eligible touchpoints receiving NEMT support. Use this to demonstrate break-even via disciplined targeting.</div>
+            </div>
+            <div class="field">
+              <label>Senior-weighted allocation</label>
+              <select id="inp_weight_mode">
+                <option value="weighted" selected>Prioritize seniors (65–74)</option>
+                <option value="flat">Flat allocation (no weighting)</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Weighted allocation increases the share of support directed to seniors (higher documented transportation barrier), improving cost-effectiveness.</div>
+            </div>
+            <div class="field"><label>Seniors share of eligible touchpoints (%)</label>
+              <input id="inp_sen_share" type="number" min="0" max="100" step="1" value="25"/>
+              <div class="small" style="margin-top:6px;">Used to estimate population mix for the break-even curve. Keep conservative; update when local data is available.</div>
+            </div>
+
           </div>
 
-          <div style="font-weight:900; margin:10px 0 6px;">B) NEMT Program Inputs (Joint)</div>
           <div class="row">
-            <div class="field"><label>Mitigation rate (enter 0.50 or 50%)</label><input id="b_mitig" type="number" value="0.50" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>Cost per round trip (NEMT) ($)</label><input id="b_trip" type="number" value="60" min="0"/></div>
-            <div class="field"><label>Program overhead rate (enter 0.10 or 10%)</label><input id="b_over" type="number" value="0.10" step="0.01" min="0" max="1"/></div>
-          </div>
-
-          <div style="font-weight:900; margin:10px 0 6px;">C) CRA / Program Scope Inputs (Bank)</div>
-          <div class="row">
-            <div class="field"><label>% of riders qualifying as LMI (enter 0.90 or 90%)</label><input id="c_lmi" type="number" value="0.90" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>% of trips within Bank’s CRA Assessment Area (enter 1.00 or 100%)</label><input id="c_aa" type="number" value="1.00" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>Bank annual contribution ($/yr)</label><input id="c_bank" type="number" value="50000" min="0"/></div>
+            <div class="field"><label>Benefit per prevented disruption ($)</label><input id="inp_benefit" type="number" value="120" min="0"/></div>
+            <div class="field"><label>Startup cost (one-time, $)</label><input id="inp_startup" type="number" value="15000" min="0"/></div>
+            <div class="field"><label>Fixed monthly cost ($/mo)</label><input id="inp_fixed" type="number" value="6000" min="0"/></div>
+            <div class="field"><label>Variable unit cost ($/ride/unit)</label><input id="inp_var" type="number" value="35" min="0"/></div>
+            <div class="field"><label>Units per prevented disruption</label><input id="inp_units" type="number" value="1.2" min="0.1" step="0.1"/></div>
           </div>
 
           <div class="btnbar" style="margin-top:10px;">
-            <button class="primary" id="btn_run_roi" onclick="render_roi()">Run ROI</button>
-            <button class="secondary" id="btn_autofill_roi" onclick="autofill_share_from_tier1()">Auto‑fill transport share from Tier 1</button>
-            <button class="secondary" id="btn_be" onclick="render_breakeven()">Update break‑even chart</button>
+            <button class="primary" id="btn_run">Run cost & ROI</button>
+            <button class="secondary" id="btn_autofill">Auto-fill from Tier 2</button>
           </div>
 
           <div class="kpis" style="margin-top:10px;">
             <div class="kpi">
-              <div class="label">Net annual financial benefit ($/yr)</div>
-              <div class="value" id="o_net">—</div>
-              <div class="hint">With defaults, should match Excel (e.g., +$82,800).</div>
+              <div class="label">Program cost (annualized)</div>
+              <div class="value" id="kpi_cost">—</div>
+              <div class="hint">Startup + fixed + variable, normalized to annual basis.</div>
             </div>
             <div class="kpi">
-              <div class="label">Total program cost ($/yr)</div>
-              <div class="value" id="o_cost">—</div>
-              <div class="hint">Transport direct cost + overhead.</div>
+              <div class="label">Gross benefit (annualized)</div>
+              <div class="value" id="kpi_gross">—</div>
+              <div class="hint">Prevented disruptions × benefit.</div>
             </div>
             <div class="kpi">
-              <div class="label">ROI on program cost (x)</div>
-              <div class="value" id="o_roi">—</div>
-              <div class="hint">Net benefit ÷ total program cost.</div>
+              <div class="label">Net impact (annualized)</div>
+              <div class="value" id="kpi_net">—</div>
+              <div class="hint">Gross minus program cost.</div>
             </div>
             <div class="kpi">
-              <div class="label">Break‑even trip cost max ($)</div>
-              <div class="value" id="o_tripmax">—</div>
-              <div class="hint">Net revenue per visit − marginal clinical cost per visit.</div>
+              <div class="label">Audit-ready memo block</div>
+              <div class="small">Generated below (copy/paste).</div>
             </div>
           </div>
 
           <div class="split" style="margin-top:10px;">
             <div class="card" style="box-shadow:none;">
-              <div style="font-weight:900; margin-bottom:6px;">ROI decomposition (Excel‑parity)</div>
-              <canvas id="roi_bar" height="230"></canvas>
-              <div class="small" style="margin-top:8px;">Gross revenue, marginal clinical cost, program cost, net benefit.</div>
+              <div style="font-weight:900; margin-bottom:6px;">Benefits vs costs</div>
+              <canvas id="chart_roi" height="230"></canvas>
             </div>
             <div class="card" style="box-shadow:none;">
-              <div style="font-weight:900; margin-bottom:6px;">CRA impact outputs</div>
-              <div id="cra_box" class="codebox" style="min-height:230px;">Run ROI to populate outputs.</div>
+              <div style="font-weight:900; margin-bottom:6px;">Monthly & cumulative net</div>
+              <canvas id="chart_trend" height="230"></canvas>
             </div>
           </div>
 
           <div class="card" style="box-shadow:none; margin-top:12px;">
-            <div style="font-weight:900; margin-bottom:6px;">Break‑even explorer</div>
-            <div class="small" style="margin-bottom:10px;">
-              Sweep a single lever while holding others constant to show what must be true to reach break‑even.
-              Use this to negotiate trip cost, set mitigation targets, or justify targeted rollout.
-            </div>
-
-            <div class="row">
-              <div class="field">
-                <label>Break‑even by</label>
-                <select id="be_axis">
-                  <option value="trip" selected>Cost per round trip ($)</option>
-                  <option value="mitig">Mitigation rate (%)</option>
-                  <option value="share">Share due to transportation (%)</option>
-                </select>
-              </div>
-              <div class="field"><label>Min</label><input id="be_min" type="number" value="0" min="0" step="1"/></div>
-              <div class="field"><label>Max</label><input id="be_max" type="number" value="150" min="0" step="1"/></div>
-              <div class="field"><label>Step</label><input id="be_step" type="number" value="5" min="1" step="1"/></div>
-            </div>
-
-            <div class="split" style="margin-top:10px;">
-              <div class="card" style="box-shadow:none;">
-                <canvas id="chart_be" height="260"></canvas>
-              </div>
-              <div class="card" style="box-shadow:none;">
-                <div style="font-weight:900; margin-bottom:6px;">Break‑even summary</div>
-                <div id="be_summary" class="codebox" style="min-height:260px;">Run ROI and then click “Update break‑even chart”.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" style="box-shadow:none; margin-top:12px;">
-            <div style="font-weight:900; margin-bottom:6px;">Audit‑ready output</div>
-            <div id="roi_audit" class="codebox">Run ROI to generate a memo block.</div>
+            <div style="font-weight:900; margin-bottom:6px;">Audit-ready output</div>
+            <div id="audit_out" class="codebox"></div>
           </div>
         </div>
-      </section>
+          <div class="card" style="box-shadow:none; margin-top:12px;">
+            <div style="font-weight:900; margin-bottom:6px;">Break-even explorer (coverage vs net impact)</div>
+            <div class="small" style="margin-bottom:10px;">
+              X-axis: targeted coverage of eligible patients. Y-axis: annual net impact. The break-even point is where the curve crosses $0.
+              Use the <b>Senior-weighted allocation</b> toggle to show how prioritizing seniors shifts the curve upward.
+            </div>
+            <canvas id="chart_breakeven" height="250"></canvas>
+            <div class="small" style="margin-top:8px;">
+              Tip: Move the coverage slider to show the selected coverage point on the curve. This creates an engaging, decision-ready narrative.
+            </div>
+          </div>
 
+      </section>
 
       <!-- Drafts -->
       <section id="view_drafts" class="view">
@@ -1075,7 +1069,7 @@
     const netAnnual = grossAnnual - annualCost;
 
     // Persist last model outputs for draft generator
-    state.mostate.model = {
+    state.model = {
       activity, months, annual_touchpoints: annual,
       baseline_rate_pct: (baseRate*100),
       barrier_share_pct: (share*100),
@@ -1351,17 +1345,30 @@ Generated: ${new Date().toISOString()}`;
     setView("t3");
     showOk("Tier 3 prefilled using top Tier 2 opportunity.");
   });
-  // (removed) legacy Tier 3 autofill handler
-showOk("Tier 3 auto-fill applied from Tier 2.");
+
+  document.getElementById("btn_autofill").addEventListener("click", ()=>{
+    if(!state.selectedOpp) state.selectedOpp = state.opportunities[0] || null;
+    if(state.selectedOpp) setTier3FromOpportunity(state.selectedOpp);
+    showOk("Tier 3 auto-fill applied from Tier 2.");
   });
-  // (removed) legacy Tier 3 handler
-  // (removed) legacy Tier 3 coverage UI
+
+  document.getElementById("btn_run").addEventListener("click", runTier3);
+  // Live UI: keep coverage readout updated
+  const covEl = document.getElementById("inp_cov");
+  const covRead = document.getElementById("cov_readout");
+  if(covEl && covRead){
+    covRead.textContent = `${covEl.value}%`;
+    covEl.addEventListener("input", ()=>{ covRead.textContent = `${covEl.value}%`; });
+  }
+
+
   // Initial render placeholders
   renderTransportSpotlight();
   document.getElementById("tbl_materiality").innerHTML = "<tr><th>Disparity</th><th>Segment</th><th>Magnitude</th><th>Δ Concentration</th><th>Prominence</th><th>Score</th><th>Recommendation</th><th>Evidence</th></tr><tr><td colspan='8'>Upload documents and click Process Files.</td></tr>";
   document.getElementById("tbl_evidence").innerHTML = "<tr><th>Disparity</th><th>Snippet</th><th>Doc</th><th>Page</th></tr><tr><td colspan='4'>—</td></tr>";
   document.getElementById("tbl_cra").innerHTML = "<tr><th>Opportunity</th><th>CRA test mapping</th><th>Criterion satisfied</th><th>Strength</th><th>Score</th><th>Scope guidance</th><th>Application packet checklist</th></tr><tr><td colspan='7'>—</td></tr>";
-  // initialize draft UI (moved to end)
+  // initialize draft UI
+  wireDraftUI();
 
 
   // ------------------------------
@@ -1649,252 +1656,6 @@ Outputs:
     });
   }
 
-
-  // ------------------------------
-  // Tier 3 ROI (Excel‑parity) + Break‑even
-  // ------------------------------
-  let __roiChart = null;
-  let __beChart = null;
-
-  function _num(id){
-    const el = document.getElementById(id);
-    if(!el) return 0;
-    const v = parseFloat(el.value);
-    return isNaN(v) ? 0 : v;
-  }
-
-  
-  function _normRate(x){
-    // Accept either decimals (0.2) or percents (20). If > 1, treat as percent.
-    if(isNaN(x)) return 0;
-    return (x > 1) ? (x/100) : x;
-  }
-
-  function roi_inputs(){
-    return {
-      visits: _num("a_visits"),
-      noshow: _normRate(_num("a_noshow")),
-      share: _normRate(_num("a_share")),
-      netrev: _num("a_netrev"),
-      margc: _num("a_margc"),
-      mitig: _normRate(_num("b_mitig")),
-      trip: _num("b_trip"),
-      over: _normRate(_num("b_over")),
-      lmi: _normRate(_num("c_lmi")),
-      aa: _normRate(_num("c_aa")),
-      bank: _num("c_bank"),
-    };
-  }
-
-
-  function roi_calc(inp){
-    const transport_no_shows = inp.visits * inp.noshow * inp.share;
-    const prevented = transport_no_shows * inp.mitig;
-    const gross_rev = prevented * inp.netrev;
-    const marginal_cost = prevented * inp.margc;
-    const transport_cost = prevented * inp.trip;
-    const overhead_cost = transport_cost * inp.over;
-    const total_program_cost = transport_cost + overhead_cost;
-    const net_benefit = gross_rev - marginal_cost - total_program_cost;
-    const roi = (total_program_cost===0) ? 0 : (net_benefit/total_program_cost);
-    const be_trip_max = inp.netrev - inp.margc;
-
-    const trips = prevented;
-    const lmi_trips = trips * inp.lmi;
-    const aa_trips = trips * inp.aa;
-    const bank_per_lmi = (lmi_trips===0) ? 0 : (inp.bank/lmi_trips);
-    const bank_share_cost = (total_program_cost===0) ? 0 : (inp.bank/total_program_cost);
-    const narrative = `Estimated ${Math.round(lmi_trips).toLocaleString()} LMI trips and ${Math.round(trips).toLocaleString()} essential visits enabled annually within the Assessment Area.`;
-    return {transport_no_shows, prevented, gross_rev, marginal_cost, transport_cost, overhead_cost, total_program_cost, net_benefit, roi, be_trip_max,
-            trips, lmi_trips, aa_trips, bank_per_lmi, bank_share_cost, narrative};
-  }
-
-  window.render_roi = function(){
-    try{
-      clearErr();
-      const inp = roi_inputs();
-      const out = roi_calc(inp);
-
-      document.getElementById("o_net").textContent = fmtMoney(out.net_benefit);
-      document.getElementById("o_cost").textContent = fmtMoney(out.total_program_cost);
-      document.getElementById("o_roi").textContent = (out.total_program_cost===0) ? "—" : out.roi.toFixed(2) + "x";
-      document.getElementById("o_tripmax").textContent = "$" + out.be_trip_max.toFixed(0);
-
-      const ctx = document.getElementById("roi_bar");
-      if(!ctx){ showErr("Cannot find ROI chart canvas (roi_bar)."); return; }
-      if(__roiChart) __roiChart.destroy();
-      __roiChart = new Chart(ctx, {
-        type:"bar",
-        data:{
-          labels:["Gross revenue recaptured","Marginal clinical cost","Total program cost","Net benefit"],
-          datasets:[{label:"$/yr", data:[out.gross_rev, out.marginal_cost, out.total_program_cost, out.net_benefit]}]
-        },
-        options:{
-          plugins:{legend:{display:false}},
-          scales:{
-            x:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}},
-            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}, beginAtZero:true}
-          }
-        }
-      });
-
-      document.getElementById("cra_box").textContent =
-`Trips delivered (round trips): ${Math.round(out.trips).toLocaleString()}
-LMI trips: ${Math.round(out.lmi_trips).toLocaleString()}
-AA trips: ${Math.round(out.aa_trips).toLocaleString()}
-
-Bank annual contribution: ${fmtMoney(inp.bank)}
-Bank contribution per LMI trip: ${fmtMoney(out.bank_per_lmi)}
-Share of total program cost funded by Bank: ${(out.bank_share_cost*100).toFixed(1)}%
-
-Narrative-ready summary:
-${out.narrative}`;
-
-      // Persist for application drafts (backward-compatible keys)
-      state.mostate.model = {
-        activity: "nmt",
-        annual_cost: out.total_program_cost,
-        gross_annual_benefit: out.gross_rev - out.marginal_cost,
-        net_annual: out.net_benefit,
-        roi_parity: true,
-        inputs: inp,
-        outputs: out
-      };
-
-      document.getElementById("roi_audit").textContent =
-`NEMT No‑Show ROI + CRA Impact — Excel‑parity (Audit-ready)
-
-Inputs:
-- Annual visits: ${inp.visits.toLocaleString()}
-- No‑show rate: ${(inp.noshow*100).toFixed(1)}%
-- Transport share: ${(inp.share*100).toFixed(1)}%
-- Mitigation: ${(inp.mitig*100).toFixed(1)}%
-- Net revenue/visit: $${inp.netrev.toFixed(0)}
-- Marginal clinical cost/visit: $${inp.margc.toFixed(0)}
-- Trip cost: $${inp.trip.toFixed(0)}
-- Overhead: ${(inp.over*100).toFixed(1)}%
-
-Outputs:
-- Prevented no‑shows: ${Math.round(out.prevented).toLocaleString()}
-- Total program cost: ${fmtMoney(out.total_program_cost)}
-- Net annual benefit: ${fmtMoney(out.net_benefit)}
-- ROI: ${out.total_program_cost===0 ? "—" : out.roi.toFixed(2)+"x"}
-- Break‑even trip cost max: $${out.be_trip_max.toFixed(0)}
-
-CRA impact:
-${out.narrative}
-
-Generated: ${new Date().toISOString()}`;
-
-      showOk("ROI computed (Excel parity).");
-    }catch(e){
-      console.error(e);
-      showErr("ROI error: " + (e?.message || e));
-    }
-  };
-
-  window.autofill_share_from_tier1 = function(){
-    try{
-      if(state.transport && state.transport.overall != null){
-        const proxy = clamp((state.transport.overall/100)*3.0, 0.05, 0.70);
-        document.getElementById("a_share").value = proxy.toFixed(2);
-        showOk(`Auto-filled transport share to ${proxy.toFixed(2)} using Tier 1 signal (conservative proxy).`);
-      }else{
-        showOk("No Tier 1 transportation signal detected; defaults unchanged.");
-      }
-    }catch(e){
-      console.error(e);
-      showErr("Auto-fill error: " + (e?.message || e));
-    }
-  };
-
-  window.render_breakeven = function(){
-    try{
-      clearErr();
-      const axis = document.getElementById("be_axis").value;
-      const minV = parseFloat(document.getElementById("be_min").value);
-      const maxV = parseFloat(document.getElementById("be_max").value);
-      const step = parseFloat(document.getElementById("be_step").value);
-      if(!(maxV>minV) || step<=0){
-        showErr("Break-even range invalid. Ensure max > min and step > 0.");
-        return;
-      }
-      const base = roi_inputs();
-      const xs=[]; const ys=[]; const zeros=[];
-      for(let x=minV; x<=maxV+1e-9; x+=step){
-        const overrides = {};
-        if(axis==="trip") overrides.trip = x;
-        if(axis==="mitig") overrides.mitig = clamp(x/100,0,1);
-        if(axis==="share") overrides.share = clamp(x/100,0,1);
-        const out = roi_calc({...base, ...overrides});
-        xs.push(x);
-        ys.push(out.net_benefit);
-        zeros.push(0);
-      }
-      const ctx = document.getElementById("chart_be");
-      if(!ctx){ showErr("Cannot find break-even canvas (chart_be)."); return; }
-
-      if(__beChart) __beChart.destroy();
-      __beChart = new Chart(ctx, {
-        type:"line",
-        data:{
-          labels: xs.map(v => axis==="trip" ? "$"+Math.round(v) : Math.round(v)+"%"),
-          datasets:[
-            {label:"Net annual benefit", data: ys, tension:.25},
-            {label:"Break-even ($0)", data: zeros, borderDash:[6,6], tension:0}
-          ]
-        },
-        options:{
-          plugins:{legend:{labels:{color:"#2f4556"}}},
-          scales:{
-            x:{ticks:{color:"#2f4556", maxRotation:0, autoSkip:true}, grid:{color:"rgba(11,31,51,.08)"}},
-            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}}
-          }
-        }
-      });
-
-      // estimate break-even crossing
-      let bePoint = null;
-      for(let i=1;i<ys.length;i++){
-        if((ys[i-1] <= 0 && ys[i] >= 0) || (ys[i-1] >= 0 && ys[i] <= 0)){
-          const x0 = xs[i-1], x1 = xs[i];
-          const y0 = ys[i-1], y1 = ys[i];
-          const t = (0 - y0) / (y1 - y0 || 1e-9);
-          bePoint = x0 + t*(x1-x0);
-          break;
-        }
-      }
-      const baseOut = roi_calc(base);
-      const axisName = axis==="trip" ? "Cost per round trip" : (axis==="mitig" ? "Mitigation rate" : "Transport share");
-      document.getElementById("be_summary").textContent =
-`Break-even summary (Excel parity)
-
-Base net annual benefit: ${fmtMoney(baseOut.net_benefit)}
-Base total program cost: ${fmtMoney(baseOut.total_program_cost)}
-
-Sweep: ${axisName}
-Range: ${minV} to ${maxV} step ${step}
-
-Estimated break-even:
-${bePoint==null ? "No crossing within the selected range." :
-(axis==="trip" ? "Break-even trip cost ≈ $" + bePoint.toFixed(0) :
-"Break-even " + axisName.toLowerCase() + " ≈ " + bePoint.toFixed(1) + "%")}
-
-Use this to:
-- negotiate trip pricing,
-- set mitigation targets,
-- or define minimum targeting strength (transport share) for a pilot.`;
-
-      showOk("Break-even chart updated.");
-    }catch(e){
-      console.error(e);
-      showErr("Break-even error: " + (e?.message || e));
-    }
-  };
-
-
-  // Initialize Application Drafts UI
-  wireDraftUI();
 </script>
 </body>
 </html>
