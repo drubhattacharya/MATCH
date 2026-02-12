@@ -170,7 +170,8 @@
     <div class="tabs" aria-label="Navigation tabs">
       <button class="tabbtn active" id="tab_t1" data-view="t1">Tier 1 — Materiality</button>
       <button class="tabbtn" id="tab_t2" data-view="t2">Tier 2 — CRA Readiness</button>
-      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — Cost & ROI</button>
+      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — Cost & ROI
+      <button class="tabbtn" id="tab_drafts" data-view="drafts">Application Drafts</button></button>
 
       <div class="gate">
         <span class="chip"><span id="gateDot" class="dot"></span> <span id="gateText">Tier 3 locked until Tier 2 score ≥ 60</span></span>
@@ -372,6 +373,23 @@
             <div class="field"><label>Baseline disruption rate (%)</label><input id="inp_base" type="number" value="15" min="0" max="100" step="0.1"/></div>
             <div class="field"><label>Share attributable to barrier (%)</label><input id="inp_share" type="number" value="25" min="0" max="100" step="0.1"/></div>
             <div class="field"><label>Reduction in barrier disruptions (%)</label><input id="inp_red" type="number" value="30" min="0" max="100" step="0.1"/></div>
+            <div class="field"><label>Targeted coverage of eligible patients (%) <span class="mono" id="cov_readout">25%</span></label>
+              <input id="inp_cov" type="range" min="5" max="60" step="1" value="25"/>
+              <div class="small" style="margin-top:6px;">Scales the portion of eligible touchpoints receiving NEMT support. Use this to demonstrate break-even via disciplined targeting.</div>
+            </div>
+            <div class="field">
+              <label>Senior-weighted allocation</label>
+              <select id="inp_weight_mode">
+                <option value="weighted" selected>Prioritize seniors (65–74)</option>
+                <option value="flat">Flat allocation (no weighting)</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Weighted allocation increases the share of support directed to seniors (higher documented transportation barrier), improving cost-effectiveness.</div>
+            </div>
+            <div class="field"><label>Seniors share of eligible touchpoints (%)</label>
+              <input id="inp_sen_share" type="number" min="0" max="100" step="1" value="25"/>
+              <div class="small" style="margin-top:6px;">Used to estimate population mix for the break-even curve. Keep conservative; update when local data is available.</div>
+            </div>
+
           </div>
 
           <div class="row">
@@ -425,7 +443,116 @@
             <div id="audit_out" class="codebox"></div>
           </div>
         </div>
+          <div class="card" style="box-shadow:none; margin-top:12px;">
+            <div style="font-weight:900; margin-bottom:6px;">Break-even explorer (coverage vs net impact)</div>
+            <div class="small" style="margin-bottom:10px;">
+              X-axis: targeted coverage of eligible patients. Y-axis: annual net impact. The break-even point is where the curve crosses $0.
+              Use the <b>Senior-weighted allocation</b> toggle to show how prioritizing seniors shifts the curve upward.
+            </div>
+            <canvas id="chart_breakeven" height="250"></canvas>
+            <div class="small" style="margin-top:8px;">
+              Tip: Move the coverage slider to show the selected coverage point on the curve. This creates an engaging, decision-ready narrative.
+            </div>
+          </div>
+
       </section>
+
+      <!-- Drafts -->
+      <section id="view_drafts" class="view">
+        <div class="callout">
+          <div style="font-weight:900;">CRA Application Draft Generator</div>
+          <div class="small" style="margin-top:6px;">
+            Use the dropdowns to generate exam‑defensible draft artifacts from the dashboard analysis (Tier 1–3). 
+            Drafts pull from uploaded evidence (disparity measures + citations), Tier 2 eligibility criterion and scope guidance,
+            and the most recent Tier 3 cost/ROI scenario (when run).
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none; margin-top:12px;">
+          <div class="row">
+            <div class="field">
+              <label>Artifact type</label>
+              <select id="draft_type">
+                <option value="cra_memo">CRA Activity Justification Memo</option>
+                <option value="exam_narrative">Examiner‑Facing Narrative (PE language)</option>
+                <option value="crosswalk">CRA Eligibility Crosswalk Table</option>
+                <option value="term_sheet">Joint Partnership Term Sheet (working draft)</option>
+                <option value="chna_brief">CHNA Implementation Alignment Brief</option>
+                <option value="monitor_plan">Monitoring & Evidence Plan</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Choose the document you want to generate. Everything is editable after download.</div>
+            </div>
+
+            <div class="field">
+              <label>Opportunity / Activity</label>
+              <select id="draft_activity">
+                <option value="auto">Auto (Top Tier 2)</option>
+                <option value="nmt">Transportation‑to‑care (NEMT)</option>
+                <option value="food">Food access support</option>
+                <option value="care">Care navigation / referral infrastructure</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Default uses the highest‑scoring Tier 2 opportunity.</div>
+            </div>
+
+            <div class="field">
+              <label>Voice & tone</label>
+              <select id="draft_tone">
+                <option value="bank">Bank CRA file (formal)</option>
+                <option value="joint" selected>Joint bank–hospital memo (board‑ready)</option>
+                <option value="hospital">Hospital internal approval (ops/finance)</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Changes emphasis, not the underlying facts.</div>
+            </div>
+          </div>
+
+          <div class="btnbar" style="margin-top:10px;">
+            <button class="primary" id="btn_generate_draft">Generate Draft</button>
+            <button id="btn_copy_draft">Copy</button>
+            <button class="secondary" id="btn_download_draft">Download .txt</button>
+          </div>
+
+          <div class="split" style="margin-top:10px;">
+            <div class="card" style="box-shadow:none;">
+              <div style="font-weight:900; margin-bottom:6px;">Preview</div>
+              <div id="draft_preview" class="codebox" style="min-height:340px;">Select an artifact type and click <b>Generate Draft</b>.</div>
+            </div>
+            <div class="card" style="box-shadow:none;">
+              <div style="font-weight:900; margin-bottom:6px;">Quick controls</div>
+              <div class="small" style="margin-bottom:10px;">
+                These fields are optional. They allow quick tailoring without editing after export.
+              </div>
+              <div class="row">
+                <div class="field">
+                  <label>Project name (optional)</label>
+                  <input id="draft_project_name" type="text" placeholder="e.g., Senior Access Shuttle — 12‑month pilot"/>
+                </div>
+                <div class="field">
+                  <label>Implementing partner (optional)</label>
+                  <input id="draft_partner" type="text" placeholder="e.g., County Transit / Nonprofit / Ride broker"/>
+                </div>
+              </div>
+              <div class="row">
+                <div class="field">
+                  <label>Assessment area notes (optional)</label>
+                  <input id="draft_scope_note" type="text" placeholder="e.g., Target ZIPs 56xxx within AA; document beneficiary location."/>
+                </div>
+                <div class="field">
+                  <label>Funding structure (optional)</label>
+                  <input id="draft_structure" type="text" placeholder="e.g., CRA‑credited grant to nonprofit; service agreement with hospital."/>
+                </div>
+              </div>
+
+              <div class="callout" style="margin-top:10px;">
+                <div style="font-weight:900;">Tip</div>
+                <div class="small" style="margin-top:6px;">
+                  Run Tier 3 (<b>Cost & ROI</b>) first to populate the draft with a program cost baseline and break‑even assumptions.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 </div>
@@ -466,6 +593,8 @@
     opportunities: [], // Tier2: {opp,kind,tests,criterion,strength,score,scope,checklist}
     selectedOpp: null,
     transport: {overall:null, age6574:null}
+  ,
+    model: null
   };
 
   // Disparities list (includes transportation explicitly)
@@ -891,6 +1020,7 @@
   }
 
   function runTier3(){
+    
     const activity = document.getElementById("inp_activity").value;
     const months = parseInt(document.getElementById("inp_months").value||"12",10);
 
@@ -899,29 +1029,72 @@
     const share = parseFloat(document.getElementById("inp_share").value||"0")/100;
     const red = parseFloat(document.getElementById("inp_red").value||"0")/100;
 
+    const covPct = parseFloat(document.getElementById("inp_cov").value||"25");
+    const weightMode = document.getElementById("inp_weight_mode").value; // weighted | flat
+    const senSharePct = clamp(parseFloat(document.getElementById("inp_sen_share").value||"25"), 0, 100);
+
     const benefitPer = parseFloat(document.getElementById("inp_benefit").value||"0");
     const startup = parseFloat(document.getElementById("inp_startup").value||"0");
     const fixed = parseFloat(document.getElementById("inp_fixed").value||"0");
     const varCost = parseFloat(document.getElementById("inp_var").value||"0");
     const unitsPer = parseFloat(document.getElementById("inp_units").value||"1");
 
-    const baselineDisrupt = annual*baseRate;
-    const barrierDisrupt = baselineDisrupt*share;
-    const prevented = barrierDisrupt*red;
+    // Coverage and weighting logic:
+    // Eligible touchpoints that receive support (targeted coverage).
+    const eligibleTouchpoints = annual * (covPct/100);
 
-    const unitsAnnual = prevented*unitsPer;
-    const grossAnnual = prevented*benefitPer;
+    // Transport amplification factor from CHNA (65–74 vs overall) when available.
+    let ampFactor = 1.0;
+    if(state.transport.overall != null && state.transport.age6574 != null && state.transport.overall > 0){
+      ampFactor = state.transport.age6574 / state.transport.overall; // e.g., 8.5/2.7 = 3.15x
+    }
+    if(weightMode === "flat") ampFactor = 1.0;
+
+    // Effective barrier share adjusts upward when seniors are prioritized (higher transport barrier).
+    const senShare = senSharePct/100;
+    const effBarrierShare = clamp(share * ((1-senShare)*1.0 + (senShare*ampFactor)), 0, 1);
+
+    // Disruptions among those offered support
+    const baselineDisrupt = eligibleTouchpoints * baseRate;
+    const barrierDisrupt = baselineDisrupt * effBarrierShare;
+    const prevented = barrierDisrupt * red;
+
+    // Units and benefit (annualized)
+    const unitsAnnual = prevented * unitsPer;
+    const grossAnnual = prevented * benefitPer;
 
     // cost over horizon: startup + fixed*months + variable*(annualUnits*months/12)*varCost
     const totalCostH = startup + fixed*months + (unitsAnnual*(months/12)*varCost);
     const annualCost = totalCostH*(12/months);
     const netAnnual = grossAnnual - annualCost;
 
+    // Persist last model outputs for draft generator
+    state.model = {
+      activity, months, annual_touchpoints: annual,
+      baseline_rate_pct: (baseRate*100),
+      barrier_share_pct: (share*100),
+      reduction_pct: (red*100),
+      coverage_pct: Math.round(covPct),
+      weight_mode: weightMode,
+      seniors_share_pct: Math.round(senSharePct),
+      amp_factor: (state.transport.overall && state.transport.age6574) ? (state.transport.age6574/state.transport.overall) : null,
+      prevented_disruptions: prevented,
+      units_annual: unitsAnnual,
+      startup, fixed_monthly: fixed, variable_unit_cost: varCost, units_per_prevented: unitsPer,
+      total_cost_horizon: totalCostH,
+      annual_cost: annualCost,
+      gross_annual_benefit: grossAnnual,
+      net_annual: netAnnual
+    };
+
+
     document.getElementById("kpi_cost").textContent = fmtMoney(annualCost);
     document.getElementById("kpi_gross").textContent = fmtMoney(grossAnnual);
     document.getElementById("kpi_net").textContent = fmtMoney(netAnnual);
+    const covReadout = document.getElementById("cov_readout");
+    if(covReadout) covReadout.textContent = `${Math.round(covPct)}%`;
 
-    // Charts
+    // Charts: ROI
     if(chartROI) chartROI.destroy();
     chartROI = new Chart(document.getElementById("chart_roi"),{
       type:"bar",
@@ -931,6 +1104,7 @@
                 y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}, beginAtZero:true}}}
     });
 
+    // Monthly trend
     const labels = Array.from({length:months}, (_,i)=>`M${i+1}`);
     const monthlyBenefit = grossAnnual/12;
     const monthlyUnits = unitsAnnual/12;
@@ -951,6 +1125,47 @@
                 y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}}}}
     });
 
+    // Break-even chart: vary coverage from 5..60
+    const covs = [];
+    const nets = [];
+    const zeroLine = [];
+    const minC = 5, maxC = 60;
+    for(let c=minC; c<=maxC; c+=1){
+      const eligible = annual * (c/100);
+      const baseDis = eligible * baseRate;
+      const barDis = baseDis * effBarrierShare;
+      const prev = barDis * red;
+      const unitsA = prev * unitsPer;
+      const grossA = prev * benefitPer;
+      const totalCost = startup + fixed*months + (unitsA*(months/12)*varCost);
+      const annCost = totalCost*(12/months);
+      covs.push(c);
+      nets.push(grossA - annCost);
+      zeroLine.push(0);
+    }
+
+    const ctxBE = document.getElementById("chart_breakeven");
+    if(ctxBE){
+      if(window.__beChart) window.__beChart.destroy();
+      window.__beChart = new Chart(ctxBE, {
+        type:"line",
+        data:{
+          labels: covs.map(x=>`${x}%`),
+          datasets:[
+            {label:"Annual net impact", data: nets, tension:.25},
+            {label:"Break-even ($0)", data: zeroLine, borderDash:[6,6], tension:0}
+          ]
+        },
+        options:{
+          plugins:{legend:{labels:{color:"#2f4556"}}},
+          scales:{
+            x:{ticks:{color:"#2f4556", maxRotation:0, autoSkip:true}, grid:{color:"rgba(11,31,51,.08)"}},
+            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}}
+          }
+        }
+      });
+    }
+
     // Audit memo
     const topOpp = state.selectedOpp || state.opportunities[0] || null;
     const crit = topOpp ? topOpp.criterion : CRA_CRITERIA[activity]?.criterion || "—";
@@ -960,42 +1175,39 @@
 Selected activity: ${activity}
 CRA criterion satisfied: ${crit}
 
-A) Documented disparity (Tier 1)
+A) Documented transportation disparity (CHNA)
 - Transportation overall: ${state.transport.overall==null? "Not detected" : fmtPct(state.transport.overall)}
 - Transportation age 65–74: ${state.transport.age6574==null? "Not detected" : fmtPct(state.transport.age6574)}
-- Amplification: ${(state.transport.overall && state.transport.age6574) ? (state.transport.age6574/state.transport.overall).toFixed(1)+"×" : "—"}
+- Amplification factor: ${(state.transport.overall && state.transport.age6574) ? (state.transport.age6574/state.transport.overall).toFixed(1)+"×" : "—"}
 
-B) Baseline assumptions
-- Annual touchpoints: ${fmtInt(annual)}
-- Baseline disruption rate: ${(baseRate*100).toFixed(1)}%
-- Share attributable to barrier: ${(share*100).toFixed(1)}%
-- Reduction in barrier disruptions: ${(red*100).toFixed(1)}%
-- Benefit per prevented disruption: ${fmtMoney(benefitPer)}
+B) Targeting design (this is the partnership lever)
+- Targeted coverage of eligible patients: ${Math.round(covPct)}%
+- Allocation mode: ${weightMode === "weighted" ? "Senior-weighted (prioritize 65–74)" : "Flat allocation"}
+- Seniors share of eligible touchpoints: ${Math.round(senSharePct)}%
+- Effective barrier share (after weighting): ${(effBarrierShare*100).toFixed(1)}%
 
-C) Total program cost baseline (answers: “How much does it cost?”)
-- Startup cost (one-time): ${fmtMoney(startup)}
-- Fixed monthly cost: ${fmtMoney(fixed)} per month
-- Variable unit cost: ${fmtMoney(varCost)} per unit
+C) Cost baseline (answers: “How much does it cost?”)
+- Startup (one-time): ${fmtMoney(startup)}
+- Fixed monthly cost: ${fmtMoney(fixed)}
+- Variable unit cost: ${fmtMoney(varCost)}
 - Units per prevented disruption: ${unitsPer.toFixed(2)}
 - Estimated annual units: ${fmtInt(unitsAnnual)}
-- Total cost over horizon (${months} mo): ${fmtMoney(totalCostH)}
 - Annualized program cost: ${fmtMoney(annualCost)}
 
-D) Modeled annual impact
-- Baseline disruptions: ${fmtInt(baselineDisrupt)}
-- Barrier disruptions: ${fmtInt(barrierDisrupt)}
+D) Impact (annualized)
 - Prevented disruptions: ${fmtInt(prevented)}
 - Annual gross benefit: ${fmtMoney(grossAnnual)}
 - Annual net impact: ${fmtMoney(netAnnual)}
 
-E) Evidence packet (minimum)
-- CHNA excerpt(s) + page refs, including subgroup differential
+E) Evidence packet
+- CHNA excerpt(s) + subgroup differential + page refs
 - Target population definition (LMI method) + geography attribution
 - Contracts/invoices + service logs + beneficiary counts
 - Monitoring cadence with baseline vs observed + corrective actions
 
 Generated: ${new Date().toISOString()}`;
     document.getElementById("audit_out").textContent = memo;
+
   }
 
   // ------------------------------
@@ -1141,12 +1353,309 @@ Generated: ${new Date().toISOString()}`;
   });
 
   document.getElementById("btn_run").addEventListener("click", runTier3);
+  // Live UI: keep coverage readout updated
+  const covEl = document.getElementById("inp_cov");
+  const covRead = document.getElementById("cov_readout");
+  if(covEl && covRead){
+    covRead.textContent = `${covEl.value}%`;
+    covEl.addEventListener("input", ()=>{ covRead.textContent = `${covEl.value}%`; });
+  }
+
 
   // Initial render placeholders
   renderTransportSpotlight();
   document.getElementById("tbl_materiality").innerHTML = "<tr><th>Disparity</th><th>Segment</th><th>Magnitude</th><th>Δ Concentration</th><th>Prominence</th><th>Score</th><th>Recommendation</th><th>Evidence</th></tr><tr><td colspan='8'>Upload documents and click Process Files.</td></tr>";
   document.getElementById("tbl_evidence").innerHTML = "<tr><th>Disparity</th><th>Snippet</th><th>Doc</th><th>Page</th></tr><tr><td colspan='4'>—</td></tr>";
   document.getElementById("tbl_cra").innerHTML = "<tr><th>Opportunity</th><th>CRA test mapping</th><th>Criterion satisfied</th><th>Strength</th><th>Score</th><th>Scope guidance</th><th>Application packet checklist</th></tr><tr><td colspan='7'>—</td></tr>";
+  // initialize draft UI
+  wireDraftUI();
+
+
+  // ------------------------------
+  // Draft Generator (Application artifacts)
+  // ------------------------------
+  function pickOpportunity(kind){
+    if(!state.opportunities || state.opportunities.length===0) return null;
+    if(kind==="auto") return state.opportunities[0];
+    return state.opportunities.find(o=>o.kind===kind) || state.opportunities[0];
+  }
+
+  function topEvidenceLines(maxLines=4){
+    const lines = [];
+    // Prefer transportation: show overall + 65–74 if available
+    if(state.transport.overall!=null){
+      lines.push(`- Transportation barrier overall: ${fmtPct(state.transport.overall)} (source: ${findEvidenceRef("Transportation barrier", "Overall") || "see evidence table"})`);
+    }
+    if(state.transport.age6574!=null){
+      lines.push(`- Transportation barrier age 65–74: ${fmtPct(state.transport.age6574)} (source: ${findEvidenceRef("Transportation barrier", "Age 65") || "see evidence table"})`);
+    }
+    const others = state.findings.filter(f=>f.key!=="transport").slice(0, maxLines);
+    for(const f of others){
+      lines.push(`- ${f.disparity} (${f.segment}): ${fmtPct(f.magnitude)} (evidence: ${f.evidenceRef||"—"})`);
+    }
+    return lines.join("\n");
+  }
+
+  function findEvidenceRef(disparityLabel, segmentHint){
+    const f = state.findings.find(x => x.disparity === disparityLabel && (!segmentHint || x.segment.includes(segmentHint)));
+    return f ? f.evidenceRef : null;
+  }
+
+  function appPacketChecklist(kind){
+    const common = [
+      "CHNA excerpt(s) with page references (documented need + affected segment)",
+      "Target population definition (LMI method and/or qualifying segment definition)",
+      "Geographic attribution method (AA mapping via ZIP/tract/county; proportional benefit if broader)",
+      "Contracts/MOUs/service agreements and invoices (clean audit trail)",
+      "Service logs and beneficiary counts (units delivered; counts served; LMI estimate)",
+      "Monitoring cadence (baseline vs observed; variance notes; corrective actions)"
+    ];
+    const nmt = [
+      "Ride logs (date/time pickup/dropoff; appointment type; beneficiary ZIP)",
+      "Broker/vendor KPIs (on-time rate, completed rides, cancellations, no-shows)",
+      "Eligibility gating rationale (senior prioritization supported by CHNA differential)"
+    ];
+    const food = [
+      "Distribution logs (units delivered; eligibility; geography)",
+      "Partner controls (stock, delivery cadence, audit spot-checks)"
+    ];
+    const care = [
+      "Workflow documentation (referral pathways; intake criteria)",
+      "Referral counts and closed-loop outcomes"
+    ];
+    let extra = [];
+    if(kind==="nmt") extra = nmt;
+    if(kind==="food") extra = food;
+    if(kind==="care") extra = care;
+    return common.concat(extra).map(x=>`- ${x}`).join("\n");
+  }
+
+  function renderCrosswalkTable(opportunity){
+    const rows = state.opportunities.map(o => {
+      return `| ${o.opp} | ${o.tests} | ${o.criterion} | ${o.score} (${o.strength}) | ${o.scope} |`;
+    });
+    return [
+      "| Opportunity | CRA test mapping | Criterion satisfied | Readiness | Scope guidance |",
+      "|---|---|---|---|---|",
+      ...rows
+    ].join("\n");
+  }
+
+  function draftHeader(tone, projectName){
+    const title = projectName ? projectName : "CRA‑Aligned Health Access Initiative";
+    const toneLine = tone==="bank" ? "Bank CRA File Draft" : (tone==="hospital" ? "Hospital Internal Approval Draft" : "Joint Bank–Hospital Draft");
+    return `${title}\n${toneLine}\nGenerated: ${new Date().toISOString()}\n`;
+  }
+
+  function generateDraft(draftType, oppKind, tone){
+    const opp = pickOpportunity(oppKind);
+    const projectName = (document.getElementById("draft_project_name")?.value || "").trim();
+    const partner = (document.getElementById("draft_partner")?.value || "").trim();
+    const scopeNote = (document.getElementById("draft_scope_note")?.value || "").trim();
+    const structure = (document.getElementById("draft_structure")?.value || "").trim();
+
+    const header = draftHeader(tone, projectName);
+    const oppLine = opp ? `${opp.opp}\nCRA criterion satisfied: ${opp.criterion}\nCRA test mapping: ${opp.tests}\nReadiness: ${opp.score} (${opp.strength})\n` :
+      "No Tier 2 opportunities available yet. Process documents first.\n";
+
+    const evidence = topEvidenceLines(4);
+
+    // Tier 3 model inclusion when available
+    let modelBlock = "Tier 3 (cost & ROI): Not yet run. Run Tier 3 to populate cost baseline and break‑even assumptions.\n";
+    if(state.model){
+      modelBlock =
+`Tier 3 (cost & ROI) — most recent scenario:
+- Activity: ${state.model.activity}
+- Coverage: ${state.model.coverage_pct}% (${state.model.weight_mode === "weighted" ? "senior‑weighted" : "flat"}; seniors share ${state.model.seniors_share_pct}%)
+- Annualized program cost: ${fmtMoney(state.model.annual_cost)}
+- Annual gross benefit: ${fmtMoney(state.model.gross_annual_benefit)}
+- Annual net impact: ${fmtMoney(state.model.net_annual)}
+- Assumptions: baseline disruption ${state.model.baseline_rate_pct.toFixed(1)}%, barrier share ${state.model.barrier_share_pct.toFixed(1)}%, reduction ${state.model.reduction_pct.toFixed(1)}%.\n`;
+    }
+
+    const orgLines = [
+      partner ? `Implementing partner: ${partner}` : null,
+      structure ? `Funding structure: ${structure}` : null,
+      scopeNote ? `AA/scope note: ${scopeNote}` : null
+    ].filter(Boolean).join("\n");
+
+    if(draftType==="cra_memo"){
+      return `${header}
+1) Selected opportunity
+${oppLine}
+${orgLines ? orgLines + "\n" : ""}
+
+2) Performance context and documented need (CHNA evidence)
+${evidence}
+
+3) Why this is responsive (what changes)
+- The activity is targeted to the population segment(s) with the largest documented access disruption (e.g., seniors where transportation barrier is amplified).
+- The implementation design includes traceable eligibility, service logs, and geography attribution to support exam defensibility.
+
+4) Eligibility criterion satisfied (explicit)
+${opp ? opp.criterion : "—"}
+
+5) Scope and attribution
+- Primary: attribute benefit within the bank’s assessment area by documenting beneficiary location (ZIP/tract/county) and delivery footprint.
+- Secondary: if broader, document proportional benefit allocation and retain mapping evidence.
+
+6) Program cost baseline and impact (decision support)
+${modelBlock}
+
+7) Evidence & monitoring packet (minimum)
+${appPacketChecklist(opp ? opp.kind : "nmt")}
+`;
+    }
+
+    if(draftType==="exam_narrative"){
+      const amp = (state.transport.overall && state.transport.age6574) ? (state.transport.age6574/state.transport.overall) : null;
+      const ampLine = amp ? `Transportation barriers were amplified among older adults (~${amp.toFixed(1)}× vs overall), supporting a targeted access response.` : `Transportation barriers were documented in the CHNA and used to target the activity.`;
+      return `${header}
+Examiner‑facing narrative (Performance Evaluation style)
+
+The institution supported a community services initiative aligned to documented local needs. ${ampLine}
+The activity was structured to meet the CRA qualifying criterion as a community development service targeted to low‑ or moderate‑income individuals (criterion and support documentation retained). The institution maintained an audit trail including service logs, invoices, and beneficiary counts, and tracked outcomes against a defined baseline.
+
+Evidence basis (CHNA excerpts):
+${evidence}
+
+CRA criterion satisfied:
+${opp ? opp.criterion : "—"}
+
+${state.model ? "Quantified program cost and impact (annualized):\n- Cost: "+fmtMoney(state.model.annual_cost)+"\n- Net impact: "+fmtMoney(state.model.net_annual)+"\n" : ""}`;
+    }
+
+    if(draftType==="crosswalk"){
+      return `${header}
+CRA Eligibility Crosswalk (working)
+
+${renderCrosswalkTable(opp)}
+`;
+    }
+
+    if(draftType==="term_sheet"){
+      return `${header}
+Joint Partnership Term Sheet (working draft)
+
+Project: ${projectName || (opp ? opp.opp : "—")}
+Purpose: Address documented access disparities through a targeted intervention aligned with CRA community development criteria.
+
+Parties:
+- Hospital: _______________________
+- Bank: ___________________________
+${partner ? "- Implementing partner: "+partner+"\n" : ""}
+
+Need statement (CHNA):
+${evidence}
+
+CRA criterion satisfied:
+${opp ? opp.criterion : "—"}
+
+Geographic attribution:
+- Assessment area targeting: document beneficiary location and service footprint.
+${scopeNote ? "- Notes: "+scopeNote+"\n" : ""}
+
+Funding structure:
+${structure || "TBD (grant / investment / service agreement — choose the structure that best aligns with bank CRA strategy and hospital operations)."}
+
+Budget baseline (annualized):
+${state.model ? "- Program cost: "+fmtMoney(state.model.annual_cost)+"\n- Expected net impact: "+fmtMoney(state.model.net_annual)+"\n" : "- Run Tier 3 to populate cost baseline and scenario.\n"}
+
+Evidence & reporting:
+${appPacketChecklist(opp ? opp.kind : "nmt")}
+
+Sign‑off workflow:
+- Hospital approval: ____________________
+- Bank CRA approval: ___________________
+`;
+    }
+
+    if(draftType==="chna_brief"){
+      return `${header}
+CHNA Implementation Alignment Brief
+
+CHNA‑documented need:
+${evidence}
+
+Selected intervention:
+${oppLine}
+
+Implementation summary:
+- Target segment(s): older adults prioritized when transportation barriers are amplified; additional eligibility defined by LMI method and service area.
+- Delivery model: partner/brokered NEMT with documented ride logs and monitoring.
+
+Budget and evaluation:
+${modelBlock}
+
+KPIs:
+- Completed rides
+- Prevented disruptions (missed appointments)
+- Beneficiary counts and geography attribution
+- Monthly monitoring with corrective action triggers
+`;
+    }
+
+    if(draftType==="monitor_plan"){
+      return `${header}
+Monitoring & Evidence Plan (Exam‑ready)
+
+Selected opportunity:
+${oppLine}
+
+Data capture (minimum):
+${appPacketChecklist(opp ? opp.kind : "nmt")}
+
+Monitoring cadence:
+- Weekly: operational exceptions (cancellations, no‑shows, delayed pickups)
+- Monthly: units delivered; beneficiary counts; geography attribution spot check; budget variance
+- Quarterly: baseline vs observed disruption rate; program adjustments and corrective actions
+
+Outputs:
+- Audit trail pack (contracts/invoices/service logs)
+- Quarterly narrative of responsiveness and observed performance
+`;
+    }
+
+    // fallback
+    return `${header}\nNo draft type selected.\n`;
+  }
+
+  function wireDraftUI(){
+    const genBtn = document.getElementById("btn_generate_draft");
+    if(!genBtn) return; // view not present
+    genBtn.addEventListener("click", ()=>{
+      const type = document.getElementById("draft_type").value;
+      const kind = document.getElementById("draft_activity").value;
+      const tone = document.getElementById("draft_tone").value;
+      const txt = generateDraft(type, kind, tone);
+      document.getElementById("draft_preview").textContent = txt;
+    });
+
+    document.getElementById("btn_copy_draft").addEventListener("click", async ()=>{
+      const txt = document.getElementById("draft_preview").textContent || "";
+      try{
+        await navigator.clipboard.writeText(txt);
+        showOk("Draft copied to clipboard.");
+      }catch(e){
+        showOk("Copy failed in this browser. You can manually select the text and copy.");
+      }
+    });
+
+    document.getElementById("btn_download_draft").addEventListener("click", ()=>{
+      const txt = document.getElementById("draft_preview").textContent || "";
+      const blob = new Blob([txt], {type:"text/plain"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const type = document.getElementById("draft_type").value;
+      a.download = `cra_application_${type}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  }
+
 </script>
 </body>
 </html>
