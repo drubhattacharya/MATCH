@@ -8,7 +8,6 @@
   <!-- Dependencies (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     /* Match LAI Navigation Dashboard look & feel (light, crisp, blue/green accents) */
@@ -343,130 +342,84 @@
       <!-- Tier 3 -->
       <section id="view_t3" class="view">
         <div class="callout">
-          <div style="font-weight:900;">Tier 3 — NEMT No‑Show ROI + CRA Impact (Excel‑aligned)</div>
+          <div style="font-weight:900;">Tier 3 — NEMT No‑Show ROI + CRA Impact (Excel Parity)</div>
           <div class="small" style="margin-top:6px;">
-            This Tier 3 module mirrors your attached Excel model: <b>A) Volume & Access</b> + <b>B) Program Inputs</b> + <b>C) CRA Scope</b>,
-            then computes <b>D) ROI</b> and <b>E) CRA outputs</b>. Defaults match the spreadsheet’s default cells.
+            Tier 3 is a pure <b>Excel‑parity</b> simulator. No spreadsheet uploads here.
+            Adjust inputs below (or auto‑fill from Tier 1 signals) and the ROI + CRA outputs update.
           </div>
         </div>
 
         <div class="card" style="box-shadow:none; margin-top:12px;">
-          <div class="row">
-            <div class="field">
-              <label>Optional: Import your Excel template (.xlsx)</label>
-              <input id="roi_xlsx" type="file" accept=".xlsx"/>
-              <div class="small" style="margin-top:6px;">
-                Upload <span class="mono">NEMT_NoShow_ROI_CRA_Calculator v3.0.xlsx</span> to auto‑fill inputs from the <b>Calculator</b> sheet.
-                If you skip upload, defaults are used.
-              </div>
-            </div>
-            <div class="field">
-              <label>Mode</label>
-              <select id="roi_mode">
-                <option value="mirror" selected>Mirror Excel ROI (exact formulas)</option>
-                <option value="targeted">Targeted NEMT (coverage + senior weighting add‑on)</option>
-              </select>
-              <div class="small" style="margin-top:6px;">
-                Mirror mode reproduces Excel logic and should match the Excel net benefit (e.g., +$82,800 with defaults). Targeted mode adds the break‑even explorer.
-              </div>
-            </div>
-          </div>
-
-          <div id="targeting_box" class="callout" style="margin-top:10px; display:none;">
-            <div style="font-weight:900;">Targeting levers (optional add‑on)</div>
+          <div class="callout">
+            <div style="font-weight:900;">Model definition (matches your Excel)</div>
             <div class="small" style="margin-top:6px;">
-              Use these to demonstrate break‑even by prioritizing seniors when CHNA shows amplification (e.g., 8.5% ages 65–74 vs 2.7% overall).
-              These levers are <b>off</b> in Mirror Excel mode.
-            </div>
-            <div class="row" style="margin-top:8px;">
-              <div class="field">
-                <label>Targeted coverage of eligible patients (%) <span class="mono" id="roi_cov_readout">100%</span></label>
-                <input id="roi_cov" type="range" min="5" max="100" step="1" value="100"/>
-              </div>
-              <div class="field">
-                <label>Allocation mode</label>
-                <select id="roi_weight_mode">
-                  <option value="weighted" selected>Senior‑weighted (prioritize 65–74)</option>
-                  <option value="flat">Flat allocation</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Seniors share of eligible touchpoints (%)</label>
-                <input id="roi_sen_share" type="number" min="0" max="100" step="1" value="25"/>
-              </div>
+              <b>Transportation-related no‑shows</b> = Visits × No‑show rate × Transport share<br/>
+              <b>No‑shows prevented</b> = Above × Mitigation rate<br/>
+              <b>Net benefit</b> = (Prevented × Net revenue) − (Prevented × Marginal clinical cost) − (Prevented × Trip cost × (1 + Overhead rate))
             </div>
           </div>
 
-          <div class="hr"></div>
-          <div style="font-weight:900; margin-bottom:6px;">A) Volume & Access Inputs (Health System)</div>
+          <div style="font-weight:900; margin:12px 0 6px;">A) Volume & Access Inputs (Health System)</div>
           <div class="row">
             <div class="field"><label>Annual targeted outpatient visits</label><input id="a_visits" type="number" value="40000" min="0"/></div>
-            <div class="field"><label>Baseline no‑show rate</label><input id="a_noshow" type="number" value="0.2" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>Share of no‑shows due to transportation</label><input id="a_share" type="number" value="0.3" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Baseline no‑show rate</label><input id="a_noshow" type="number" value="0.20" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Share of no‑shows due to transportation</label><input id="a_share" type="number" value="0.30" step="0.01" min="0" max="1"/></div>
             <div class="field"><label>Avg net revenue per completed visit ($)</label><input id="a_netrev" type="number" value="225" min="0"/></div>
             <div class="field"><label>Avg marginal clinical cost per completed visit ($)</label><input id="a_margc" type="number" value="90" min="0"/></div>
           </div>
 
           <div style="font-weight:900; margin:10px 0 6px;">B) NEMT Program Inputs (Joint)</div>
           <div class="row">
-            <div class="field"><label>Mitigation rate (% of transport no‑shows prevented)</label><input id="b_mitig" type="number" value="0.5" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Mitigation rate (% of transport no‑shows prevented)</label><input id="b_mitig" type="number" value="0.50" step="0.01" min="0" max="1"/></div>
             <div class="field"><label>Cost per round trip (NEMT) ($)</label><input id="b_trip" type="number" value="60" min="0"/></div>
-            <div class="field"><label>Program overhead rate</label><input id="b_over" type="number" value="0.1" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Program overhead rate</label><input id="b_over" type="number" value="0.10" step="0.01" min="0" max="1"/></div>
           </div>
 
           <div style="font-weight:900; margin:10px 0 6px;">C) CRA / Program Scope Inputs (Bank)</div>
           <div class="row">
-            <div class="field"><label>% of riders qualifying as LMI</label><input id="c_lmi" type="number" value="0.9" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>% of trips within Bank’s CRA Assessment Area</label><input id="c_aa" type="number" value="1" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>% of riders qualifying as LMI</label><input id="c_lmi" type="number" value="0.90" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>% of trips within Bank’s CRA Assessment Area</label><input id="c_aa" type="number" value="1.00" step="0.01" min="0" max="1"/></div>
             <div class="field"><label>Bank annual contribution ($/yr)</label><input id="c_bank" type="number" value="50000" min="0"/></div>
           </div>
 
           <div class="btnbar" style="margin-top:10px;">
             <button class="primary" id="btn_run_roi">Run ROI</button>
-            <button class="secondary" id="btn_autofill_roi">Auto‑fill from CHNA signals</button>
+            <button class="secondary" id="btn_autofill_roi">Auto‑fill transport share from Tier 1</button>
           </div>
 
           <div class="kpis" style="margin-top:10px;">
             <div class="kpi">
               <div class="label">Net annual financial benefit ($/yr)</div>
               <div class="value" id="o_net">—</div>
-              <div class="hint">Excel: = Gross revenue − marginal clinical cost − total program cost.</div>
+              <div class="hint">Should match Excel with the same inputs (e.g., +$82,800 on defaults).</div>
             </div>
             <div class="kpi">
               <div class="label">Total program cost ($/yr)</div>
               <div class="value" id="o_cost">—</div>
-              <div class="hint">Excel: transportation direct cost + overhead.</div>
+              <div class="hint">Transportation direct cost + overhead.</div>
             </div>
             <div class="kpi">
               <div class="label">ROI on program cost (x)</div>
               <div class="value" id="o_roi">—</div>
-              <div class="hint">Excel: net benefit ÷ total program cost.</div>
+              <div class="hint">Net benefit ÷ total program cost.</div>
             </div>
             <div class="kpi">
               <div class="label">Break‑even trip cost max ($)</div>
               <div class="value" id="o_tripmax">—</div>
-              <div class="hint">Excel: net revenue − marginal clinical cost (before overhead).</div>
+              <div class="hint">Net revenue per visit − marginal clinical cost per visit.</div>
             </div>
           </div>
 
           <div class="split" style="margin-top:10px;">
             <div class="card" style="box-shadow:none;">
-              <div style="font-weight:900; margin-bottom:6px;">D) ROI Summary (Excel‑aligned)</div>
+              <div style="font-weight:900; margin-bottom:6px;">ROI decomposition (Excel‑parity)</div>
               <canvas id="roi_bar" height="230"></canvas>
-              <div class="small" style="margin-top:8px;">Bars: gross revenue recaptured, marginal clinical cost, total program cost, net benefit.</div>
+              <div class="small" style="margin-top:8px;">Gross revenue, marginal clinical cost, total program cost, net benefit.</div>
             </div>
             <div class="card" style="box-shadow:none;">
-              <div style="font-weight:900; margin-bottom:6px;">E) CRA Impact Outputs (Excel‑aligned)</div>
+              <div style="font-weight:900; margin-bottom:6px;">CRA impact outputs</div>
               <div id="cra_box" class="codebox" style="min-height:230px;">Run ROI to populate outputs.</div>
             </div>
-          </div>
-
-          <div id="breakeven_box" class="card" style="box-shadow:none; margin-top:12px; display:none;">
-            <div style="font-weight:900; margin-bottom:6px;">Break‑even explorer (coverage vs net impact)</div>
-            <div class="small" style="margin-bottom:10px;">
-              X-axis: targeted coverage. Y-axis: net annual benefit. Use this to show a disciplined, senior‑weighted design.
-            </div>
-            <canvas id="chart_breakeven" height="250"></canvas>
           </div>
 
           <div class="card" style="box-shadow:none; margin-top:12px;">
@@ -1372,7 +1325,8 @@ Generated: ${new Date().toISOString()}`;
     showOk("Tier 3 auto-fill applied from Tier 2.");
   });
 
-  document.getElementById("btn_run").addEventListener("click", runTier3);
+  const __el_btn_run=document.getElementById("btn_run");
+  if(__el_btn_run) __el_btn_run.addEventListener("click", runTier3);
   // Live UI: keep coverage readout updated
   const covEl = document.getElementById("inp_cov");
   const covRead = document.getElementById("cov_readout");
@@ -1389,7 +1343,7 @@ Generated: ${new Date().toISOString()}`;
   document.getElementById("tbl_cra").innerHTML = "<tr><th>Opportunity</th><th>CRA test mapping</th><th>Criterion satisfied</th><th>Strength</th><th>Score</th><th>Scope guidance</th><th>Application packet checklist</th></tr><tr><td colspan='7'>—</td></tr>";
   // initialize draft UI
   wireDraftUI();
-  wireROIUI();
+  wire_roi_parity();
 
 
   // ------------------------------
@@ -1679,329 +1633,155 @@ Outputs:
 
 
   // ------------------------------
-  // Tier 3 ROI (Excel-aligned) + optional XLSX import
+  // Tier 3 ROI (Excel‑parity) — no spreadsheet uploads
   // ------------------------------
   let __roiChart = null;
-  let __beChart2 = null;
 
-  function num(id){
-    const v = parseFloat(document.getElementById(id).value);
-    return isNaN(v) ? 0 : v;
+  function roi_inputs(){
+    const v = (id)=>parseFloat(document.getElementById(id).value);
+    const safe = (x)=> (isNaN(x) ? 0 : x);
+    return {
+      visits: safe(v("a_visits")),
+      noshow: safe(v("a_noshow")),
+      share: safe(v("a_share")),
+      netrev: safe(v("a_netrev")),
+      margc: safe(v("a_margc")),
+      mitig: safe(v("b_mitig")),
+      trip: safe(v("b_trip")),
+      over: safe(v("b_over")),
+      lmi: safe(v("c_lmi")),
+      aa: safe(v("c_aa")),
+      bank: safe(v("c_bank")),
+    };
   }
 
-  function setVal(id, v){
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.value = v;
-  }
+  function roi_calc(inp){
+    // Mirror Excel formulas exactly
+    const transport_no_shows = inp.visits * inp.noshow * inp.share;
+    const prevented = transport_no_shows * inp.mitig;
+    const gross_rev = prevented * inp.netrev;
+    const marginal_cost = prevented * inp.margc;
+    const transport_cost = prevented * inp.trip;
+    const overhead_cost = transport_cost * inp.over;
+    const total_program_cost = transport_cost + overhead_cost;
+    const net_benefit = gross_rev - marginal_cost - total_program_cost;
+    const roi = (total_program_cost===0) ? 0 : (net_benefit / total_program_cost);
+    const be_trip_max = inp.netrev - inp.margc;
 
-  function fmtPct0(x){ return (x==null||isNaN(x)) ? "—" : (x*100).toFixed(1) + "%"; }
-
-  function excelROI(inputs){
-    // Mirrors Calculator sheet formulas (D section)
-    const {
-      visits, noshow, share_transport, netrev, margc,
-      mitig, trip_cost, overhead,
-      lmi, aa, bank,
-      mode, covPct, weightMode, senSharePct
-    } = inputs;
-
-    // Targeting add-on (only for targeted mode)
-    let effVisits = visits;
-    let effShareTransport = share_transport;
-
-    // Apply targeted coverage if in targeted mode
-    if(mode === "targeted"){
-      effVisits = visits * (covPct/100);
-
-      // Apply CHNA amplification for seniors if available and weighted
-      let amp = 1.0;
-      if(state.transport && state.transport.overall != null && state.transport.age6574 != null && state.transport.overall > 0){
-        amp = state.transport.age6574 / state.transport.overall;
-      }
-      if(weightMode === "flat") amp = 1.0;
-
-      const senShare = clamp(senSharePct/100, 0, 1);
-      effShareTransport = clamp(share_transport * ((1-senShare)*1.0 + senShare*amp), 0, 1);
-    }
-
-    const transport_no_shows = effVisits * noshow * effShareTransport;         // B22
-    const prevented = transport_no_shows * mitig;                              // B23
-    const gross_rev = prevented * netrev;                                     // B24
-    const marginal_cost = prevented * margc;                                  // B25
-    const transport_cost = prevented * trip_cost;                              // B26
-    const overhead_cost = transport_cost * overhead;                           // B27
-    const total_program_cost = transport_cost + overhead_cost;                 // B28
-    const net_benefit = gross_rev - marginal_cost - total_program_cost;        // B29
-    const net_per = (prevented===0) ? 0 : (net_benefit / prevented);           // B30
-    const roi = (total_program_cost===0) ? 0 : (net_benefit / total_program_cost); // B31
-    const be_trip_max = netrev - margc;                                        // B32
-
-    // CRA outputs (E section)
-    const trips = prevented;                   // B35
-    const lmi_trips = trips * lmi;             // B36
-    const aa_trips = trips * aa;               // B37
-    const bank_per_lmi = (lmi_trips===0)?0:(bank/lmi_trips); // B38
-    const bank_share_cost = (total_program_cost===0)?0:(bank/total_program_cost); // B39
-
+    // CRA outputs (Excel E section)
+    const trips = prevented;
+    const lmi_trips = trips * inp.lmi;
+    const aa_trips = trips * inp.aa;
+    const bank_per_lmi = (lmi_trips===0) ? 0 : (inp.bank / lmi_trips);
+    const bank_share_cost = (total_program_cost===0) ? 0 : (inp.bank / total_program_cost);
     const narrative = `Estimated ${Math.round(lmi_trips).toLocaleString()} LMI trips and ${Math.round(trips).toLocaleString()} essential visits enabled annually within the Assessment Area.`;
 
-    return {
-      effVisits, effShareTransport,
-      transport_no_shows, prevented, gross_rev, marginal_cost,
-      transport_cost, overhead_cost, total_program_cost,
-      net_benefit, net_per, roi, be_trip_max,
-      trips, lmi_trips, aa_trips, bank_per_lmi, bank_share_cost,
-      narrative
-    };
+    return {transport_no_shows, prevented, gross_rev, marginal_cost, transport_cost, overhead_cost, total_program_cost, net_benefit, roi, be_trip_max,
+            trips, lmi_trips, aa_trips, bank_per_lmi, bank_share_cost, narrative};
   }
 
-  function renderROI(){
-    const mode = document.getElementById("roi_mode").value;
-    const covPct = parseFloat(document.getElementById("roi_cov")?.value || "100");
-    const weightMode = document.getElementById("roi_weight_mode")?.value || "weighted";
-    const senSharePct = parseFloat(document.getElementById("roi_sen_share")?.value || "25");
+  function render_roi(){
+    try{
+      const inp = roi_inputs();
+      const out = roi_calc(inp);
 
-    const inputs = {
-      visits: num("a_visits"),
-      noshow: num("a_noshow"),
-      share_transport: num("a_share"),
-      netrev: num("a_netrev"),
-      margc: num("a_margc"),
-      mitig: num("b_mitig"),
-      trip_cost: num("b_trip"),
-      overhead: num("b_over"),
-      lmi: num("c_lmi"),
-      aa: num("c_aa"),
-      bank: num("c_bank"),
-      mode, covPct, weightMode, senSharePct
-    };
+      document.getElementById("o_net").textContent = fmtMoney(out.net_benefit);
+      document.getElementById("o_cost").textContent = fmtMoney(out.total_program_cost);
+      document.getElementById("o_roi").textContent = (out.total_program_cost===0) ? "—" : out.roi.toFixed(2) + "x";
+      document.getElementById("o_tripmax").textContent = "$" + out.be_trip_max.toFixed(0);
 
-    const out = excelROI(inputs);
-
-    // Update KPI outputs
-    document.getElementById("o_net").textContent = fmtMoney(out.net_benefit);
-    document.getElementById("o_cost").textContent = fmtMoney(out.total_program_cost);
-    document.getElementById("o_roi").textContent = (out.roi===0 && out.total_program_cost===0) ? "—" : out.roi.toFixed(2) + "x";
-    document.getElementById("o_tripmax").textContent = "$" + out.be_trip_max.toFixed(0);
-
-    // Bar chart
-    const ctx = document.getElementById("roi_bar");
-    if(!ctx){ showErr("Cannot find ROI chart canvas (roi_bar). Make sure you are on Tier 3 and the page finished loading."); return; }
-    if(__roiChart) __roiChart.destroy();
-    __roiChart = new Chart(ctx, {
-      type:"bar",
-      data:{
-        labels:["Gross revenue recaptured", "Marginal clinical cost", "Total program cost", "Net benefit"],
-        datasets:[{label:"$/yr", data:[out.gross_rev, out.marginal_cost, out.total_program_cost, out.net_benefit]}]
-      },
-      options:{
-        plugins:{legend:{display:false}},
-        scales:{
-          x:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}},
-          y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}, beginAtZero:true}
+      const ctx = document.getElementById("roi_bar");
+      if(!ctx){ showErr("Cannot find ROI chart canvas (roi_bar)."); return; }
+      if(__roiChart) __roiChart.destroy();
+      __roiChart = new Chart(ctx, {
+        type:"bar",
+        data:{
+          labels:["Gross revenue recaptured","Marginal clinical cost","Total program cost","Net benefit"],
+          datasets:[{label:"$/yr", data:[out.gross_rev, out.marginal_cost, out.total_program_cost, out.net_benefit]}]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}},
+            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}, beginAtZero:true}
+          }
         }
-      }
-    });
+      });
 
-    // CRA box
-    const craTxt =
+      const craTxt =
 `Trips delivered (round trips): ${Math.round(out.trips).toLocaleString()}
 LMI trips: ${Math.round(out.lmi_trips).toLocaleString()}
 AA trips: ${Math.round(out.aa_trips).toLocaleString()}
 
-Bank annual contribution: ${fmtMoney(inputs.bank)}
+Bank annual contribution: ${fmtMoney(inp.bank)}
 Bank contribution per LMI trip: ${fmtMoney(out.bank_per_lmi)}
 Share of total program cost funded by Bank: ${(out.bank_share_cost*100).toFixed(1)}%
 
 Narrative-ready summary:
 ${out.narrative}`;
-    const craEl = document.getElementById("cra_box");
-    if(craEl) craEl.textContent = craTxt; else showErr("Cannot find CRA output box (cra_box).");
+      const craEl = document.getElementById("cra_box");
+      if(craEl) craEl.textContent = craTxt;
 
-    // Persist for draft generator (state.model)
-    state.model = {
-      mode: inputs.mode,
-      activity: "nmt",
-      visits: inputs.visits,
-      noshow: inputs.noshow,
-      share_transport: inputs.share_transport,
-      netrev: inputs.netrev,
-      margc: inputs.margc,
-      mitig: inputs.mitig,
-      trip_cost: inputs.trip_cost,
-      overhead: inputs.overhead,
-      covPct: inputs.covPct,
-      weightMode: inputs.weightMode,
-      senSharePct: inputs.senSharePct,
-      outputs: out
-    };
+      // persist for draft generator
+      state.model = { roi_parity: true, inputs: inp, outputs: out };
 
-    // Audit memo block
-    const amp = (state.transport.overall && state.transport.age6574 && state.transport.overall>0) ? (state.transport.age6574/state.transport.overall) : null;
-    const audit =
-`NEMT No-Show ROI + CRA Impact — Audit-ready summary
+      const amp = (state.transport && state.transport.overall && state.transport.age6574 && state.transport.overall>0) ? (state.transport.age6574/state.transport.overall) : null;
+      const audit =
+`NEMT No‑Show ROI + CRA Impact — Excel‑parity (Audit-ready)
 
-Mode: ${inputs.mode === "mirror" ? "Mirror Excel ROI" : "Targeted NEMT (coverage + senior weighting)"}
+A) Inputs
+- Annual visits: ${inp.visits.toLocaleString()}
+- No‑show rate: ${(inp.noshow*100).toFixed(1)}%
+- Share due to transportation: ${(inp.share*100).toFixed(1)}%
+- Mitigation rate: ${(inp.mitig*100).toFixed(1)}%
+- Net revenue/visit: $${inp.netrev.toFixed(0)}
+- Marginal clinical cost/visit: $${inp.margc.toFixed(0)}
+- Trip cost: $${inp.trip.toFixed(0)}
+- Overhead rate: ${(inp.over*100).toFixed(1)}%
 
-A) Inputs (Excel-aligned)
-- Annual targeted outpatient visits: ${inputs.visits.toLocaleString()}
-- Baseline no-show rate: ${(inputs.noshow*100).toFixed(1)}%
-- Share due to transportation: ${(inputs.share_transport*100).toFixed(1)}%
-- Mitigation rate: ${(inputs.mitig*100).toFixed(1)}%
-- Avg net revenue/visit: $${inputs.netrev.toFixed(0)}
-- Avg marginal clinical cost/visit: $${inputs.margc.toFixed(0)}
-- Cost per round trip: $${inputs.trip_cost.toFixed(0)}
-- Overhead rate: ${(inputs.overhead*100).toFixed(1)}%
+B) CHNA transport signal (if available)
+- Overall: ${state.transport && state.transport.overall!=null ? fmtPct(state.transport.overall) : "—"}
+- Age 65–74: ${state.transport && state.transport.age6574!=null ? fmtPct(state.transport.age6574) : "—"}
+- Amplification: ${amp ? amp.toFixed(1)+"x" : "—"}
 
-B) Targeting levers (if enabled)
-- Coverage: ${Math.round(inputs.covPct)}%
-- Allocation mode: ${inputs.weightMode}
-- Seniors share: ${Math.round(inputs.senSharePct)}%
-- CHNA amplification factor (65–74 vs overall): ${amp ? amp.toFixed(1)+"x" : "—"}
-
-C) Outputs (Excel D/E)
-- Transport-related no-shows: ${Math.round(out.transport_no_shows).toLocaleString()}
-- No-shows prevented: ${Math.round(out.prevented).toLocaleString()}
+C) Outputs
+- Prevented no‑shows: ${Math.round(out.prevented).toLocaleString()}
 - Total program cost: ${fmtMoney(out.total_program_cost)}
-- Net annual financial benefit: ${fmtMoney(out.net_benefit)}
+- Net annual benefit: ${fmtMoney(out.net_benefit)}
 - ROI: ${out.total_program_cost===0 ? "—" : out.roi.toFixed(2)+"x"}
-- Break-even trip cost max (before overhead): $${out.be_trip_max.toFixed(0)}
+- Break‑even trip cost max: $${out.be_trip_max.toFixed(0)}
 
 CRA impact:
 ${out.narrative}
 
 Generated: ${new Date().toISOString()}`;
-    const auditEl = document.getElementById("roi_audit");
-    if(auditEl) auditEl.textContent = audit; else showErr("Cannot find ROI audit box (roi_audit).");
+      const auditEl = document.getElementById("roi_audit");
+      if(auditEl) auditEl.textContent = audit;
 
-    // Targeted mode break-even chart
-    const beBox = document.getElementById("breakeven_box");
-    if(inputs.mode === "targeted"){
-      beBox.style.display = "block";
-      const covs = [];
-      const nets = [];
-      const zeros = [];
-      for(let c=5; c<=100; c+=1){
-        const out2 = excelROI({...inputs, mode:"targeted", covPct:c});
-        covs.push(c);
-        nets.push(out2.net_benefit);
-        zeros.push(0);
-      }
-      const ctxBE = document.getElementById("chart_breakeven");
-      if(__beChart2) __beChart2.destroy();
-      __beChart2 = new Chart(ctxBE, {
-        type:"line",
-        data:{
-          labels: covs.map(c=>c+"%"),
-          datasets:[
-            {label:"Net annual benefit", data:nets, tension:.25},
-            {label:"Break-even ($0)", data:zeros, borderDash:[6,6], tension:0}
-          ]
-        },
-        options:{
-          plugins:{legend:{labels:{color:"#2f4556"}}},
-          scales:{
-            x:{ticks:{color:"#2f4556", maxRotation:0, autoSkip:true}, grid:{color:"rgba(11,31,51,.08)"}},
-            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}}
-          }
-        }
-      });
-    } else {
-      beBox.style.display = "none";
-    }
-
-    // Gate dot text
-    const dot = document.getElementById("gateDot");
-    if(dot){
-      dot.classList.remove("good","bad");
-      dot.classList.add(tier3Unlocked() ? "good" : "bad");
+      showOk("ROI computed (Excel parity).");
+    }catch(e){
+      console.error(e);
+      showErr("ROI run error: " + (e?.message || e));
     }
   }
 
-  function toggleTargetingUI(){
-    const mode = document.getElementById("roi_mode").value;
-    const box = document.getElementById("targeting_box");
-    const be = document.getElementById("breakeven_box");
-    if(mode === "targeted"){
-      box.style.display = "block";
-      be.style.display = "block";
-    } else {
-      box.style.display = "none";
-      be.style.display = "none";
-    }
-  }
-
-  async function importXLSX(file){
-    const data = await file.arrayBuffer();
-    const wb = XLSX.read(data, {type:"array"});
-    const sheet = wb.Sheets["Calculator"] || wb.Sheets[wb.SheetNames[0]];
-    if(!sheet) return;
-    // Pull cells matching your template layout (B5..B19, B12..B14)
-    const get = (addr, fallback=null) => {
-      const cell = sheet[addr];
-      if(!cell) return fallback;
-      const v = cell.v;
-      return (typeof v === "number") ? v : fallback;
-    };
-
-    // A inputs
-    setVal("a_visits", get("B5", num("a_visits")));
-    setVal("a_noshow", get("B6", num("a_noshow")));
-    setVal("a_share", get("B7", num("a_share")));
-    setVal("a_netrev", get("B8", num("a_netrev")));
-    setVal("a_margc", get("B9", num("a_margc")));
-
-    // B inputs
-    setVal("b_mitig", get("B12", num("b_mitig")));
-    setVal("b_trip", get("B13", num("b_trip")));
-    setVal("b_over", get("B14", num("b_over")));
-
-    // C inputs
-    setVal("c_lmi", get("B17", num("c_lmi")));
-    setVal("c_aa", get("B18", num("c_aa")));
-    setVal("c_bank", get("B19", num("c_bank")));
-
-    showOk("Imported defaults from Excel template.");
-  }
-
-  function autofillFromCHNA(){
-    // If we have CHNA transport overall and 65–74, use amplification to set share due to transport conservatively
+  function autofill_share_from_tier1(){
+    // Conservative helper: if CHNA indicates transportation as a reason for delayed care (e.g., 2.7%), convert to a share proxy.
     if(state.transport && state.transport.overall != null){
-      // Use CHNA transportation barrier as a proxy to increase share due to transport, but keep bounded
-      const proxy = clamp(state.transport.overall * 3.0 / 100.0, 0.05, 0.70); // convert pct to share
+      const pct = state.transport.overall; // percent like 2.7
+      const proxy = clamp((pct/100)*3.0, 0.05, 0.70); // bounded proxy
       document.getElementById("a_share").value = proxy.toFixed(2);
-      showOk("Auto-filled transport share from CHNA signal (conservative proxy).");
+      showOk(`Auto-filled transport share to ${proxy.toFixed(2)} using Tier 1 signal (conservative proxy).`);
     } else {
-      showOk("No CHNA transportation signal detected; leaving defaults unchanged.");
+      showOk("No Tier 1 transportation signal detected; defaults unchanged.");
     }
   }
 
-  function wireROIUI(){
+  function wire_roi_parity(){
     const runBtn = document.getElementById("btn_run_roi");
-    if(!runBtn) return;
-
-    document.getElementById("roi_mode").addEventListener("change", ()=>{
-      toggleTargetingUI();
-    });
-
-    const cov = document.getElementById("roi_cov");
-    const covRead = document.getElementById("roi_cov_readout");
-    if(cov && covRead){
-      covRead.textContent = cov.value + "%";
-      cov.addEventListener("input", ()=>{ covRead.textContent = cov.value + "%"; });
-    }
-
-    document.getElementById("btn_run_roi").addEventListener("click", ()=>{ try { renderROI(); } catch(e){ console.error(e); showErr("ROI run error: " + (e?.message||e)); } });
-    document.getElementById("btn_autofill_roi").addEventListener("click", autofillFromCHNA);
-
-    const xlsxIn = document.getElementById("roi_xlsx");
-    xlsxIn.addEventListener("change", async (e)=>{
-      const f = e.target.files && e.target.files[0];
-      if(f) await importXLSX(f);
-    });
-
-    toggleTargetingUI();
+    if(runBtn) runBtn.addEventListener("click", render_roi);
+    const autoBtn = document.getElementById("btn_autofill_roi");
+    if(autoBtn) autoBtn.addEventListener("click", autofill_share_from_tier1);
   }
 
 </script>
