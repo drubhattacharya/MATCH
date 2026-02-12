@@ -345,7 +345,7 @@
           <div style="font-weight:900;">Tier 3 — NEMT No‑Show ROI + CRA Impact (Excel‑Parity) + Break‑Even</div>
           <div class="small" style="margin-top:6px;">
             Tier 3 mirrors the ROI logic of your Excel simulator (incremental margin approach). No uploads here.
-            Adjust inputs below (or optionally auto‑fill transport share from Tier 1 CHNA signals), then run ROI and break‑even.
+            Adjust inputs below (rates can be entered as decimals like 0.20 or percents like 20), then run ROI and break‑even.
           </div>
         </div>
 
@@ -362,23 +362,23 @@
           <div style="font-weight:900; margin:12px 0 6px;">A) Volume & Access Inputs (Health System)</div>
           <div class="row">
             <div class="field"><label>Annual targeted outpatient visits</label><input id="a_visits" type="number" value="40000" min="0"/></div>
-            <div class="field"><label>Baseline no‑show rate</label><input id="a_noshow" type="number" value="0.20" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>Share of no‑shows due to transportation</label><input id="a_share" type="number" value="0.30" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Baseline no‑show rate (enter 0.20 or 20%)</label><input id="a_noshow" type="number" value="0.20" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Share of no‑shows due to transportation (enter 0.30 or 30%)</label><input id="a_share" type="number" value="0.30" step="0.01" min="0" max="1"/></div>
             <div class="field"><label>Avg net revenue per completed visit ($)</label><input id="a_netrev" type="number" value="225" min="0"/></div>
             <div class="field"><label>Avg marginal clinical cost per completed visit ($)</label><input id="a_margc" type="number" value="90" min="0"/></div>
           </div>
 
           <div style="font-weight:900; margin:10px 0 6px;">B) NEMT Program Inputs (Joint)</div>
           <div class="row">
-            <div class="field"><label>Mitigation rate (% of transport no‑shows prevented)</label><input id="b_mitig" type="number" value="0.50" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Mitigation rate (enter 0.50 or 50%)</label><input id="b_mitig" type="number" value="0.50" step="0.01" min="0" max="1"/></div>
             <div class="field"><label>Cost per round trip (NEMT) ($)</label><input id="b_trip" type="number" value="60" min="0"/></div>
-            <div class="field"><label>Program overhead rate</label><input id="b_over" type="number" value="0.10" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>Program overhead rate (enter 0.10 or 10%)</label><input id="b_over" type="number" value="0.10" step="0.01" min="0" max="1"/></div>
           </div>
 
           <div style="font-weight:900; margin:10px 0 6px;">C) CRA / Program Scope Inputs (Bank)</div>
           <div class="row">
-            <div class="field"><label>% of riders qualifying as LMI</label><input id="c_lmi" type="number" value="0.90" step="0.01" min="0" max="1"/></div>
-            <div class="field"><label>% of trips within Bank’s CRA Assessment Area</label><input id="c_aa" type="number" value="1.00" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>% of riders qualifying as LMI (enter 0.90 or 90%)</label><input id="c_lmi" type="number" value="0.90" step="0.01" min="0" max="1"/></div>
+            <div class="field"><label>% of trips within Bank’s CRA Assessment Area (enter 1.00 or 100%)</label><input id="c_aa" type="number" value="1.00" step="0.01" min="0" max="1"/></div>
             <div class="field"><label>Bank annual contribution ($/yr)</label><input id="c_bank" type="number" value="50000" min="0"/></div>
           </div>
 
@@ -1663,21 +1663,29 @@ Outputs:
     return isNaN(v) ? 0 : v;
   }
 
+  
+  function _normRate(x){
+    // Accept either decimals (0.2) or percents (20). If > 1, treat as percent.
+    if(isNaN(x)) return 0;
+    return (x > 1) ? (x/100) : x;
+  }
+
   function roi_inputs(){
     return {
       visits: _num("a_visits"),
-      noshow: _num("a_noshow"),
-      share: _num("a_share"),
+      noshow: _normRate(_num("a_noshow")),
+      share: _normRate(_num("a_share")),
       netrev: _num("a_netrev"),
       margc: _num("a_margc"),
-      mitig: _num("b_mitig"),
+      mitig: _normRate(_num("b_mitig")),
       trip: _num("b_trip"),
-      over: _num("b_over"),
-      lmi: _num("c_lmi"),
-      aa: _num("c_aa"),
+      over: _normRate(_num("b_over")),
+      lmi: _normRate(_num("c_lmi")),
+      aa: _normRate(_num("c_aa")),
       bank: _num("c_bank"),
     };
   }
+
 
   function roi_calc(inp){
     const transport_no_shows = inp.visits * inp.noshow * inp.share;
