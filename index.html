@@ -523,6 +523,52 @@
               </div>
             </div>
           </div>
+          <div class="card" style="box-shadow:none; margin-top:12px;">
+            <div style="font-weight:900; margin-bottom:6px;">Break‑even explorer</div>
+            <div class="small" style="margin-bottom:10px;">
+              This chart shows the <b>net annual benefit</b> across a range of the most decision-relevant levers. Use it to answer:
+              “What must be true for this NEMT program to break even?” The dashed line is $0 (break-even).
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Break‑even by</label>
+                <select id="be_axis">
+                  <option value="trip" selected>Cost per round trip ($)</option>
+                  <option value="mitig">Mitigation rate (%)</option>
+                  <option value="share">Share of no‑shows due to transportation (%)</option>
+                </select>
+                <div class="small" style="margin-top:6px;">Select which lever to sweep on the X‑axis while holding other inputs constant.</div>
+              </div>
+              <div class="field">
+                <label>Range (min)</label>
+                <input id="be_min" type="number" value="0" min="0" step="1"/>
+              </div>
+              <div class="field">
+                <label>Range (max)</label>
+                <input id="be_max" type="number" value="150" min="0" step="1"/>
+              </div>
+              <div class="field">
+                <label>Step</label>
+                <input id="be_step" type="number" value="5" min="1" step="1"/>
+              </div>
+            </div>
+
+            <div class="btnbar" style="margin-top:10px;">
+              <button id="btn_be" class="secondary" onclick="render_breakeven()">Update break‑even chart</button>
+            </div>
+
+            <div class="split" style="margin-top:10px;">
+              <div class="card" style="box-shadow:none;">
+                <canvas id="chart_be" height="260"></canvas>
+              </div>
+              <div class="card" style="box-shadow:none;">
+                <div style="font-weight:900; margin-bottom:6px;">Break‑even summary</div>
+                <div id="be_summary" class="codebox" style="min-height:260px;">Run ROI and then update the break‑even chart.</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1680,6 +1726,121 @@ Outputs:
             trips, lmi_trips, aa_trips, bank_per_lmi, bank_share_cost, narrative};
   }
 
+  
+  // ------------------------------
+  // Break-even chart (Tier 3) — lever sweep
+  // ------------------------------
+  let __beChart = null;
+
+  function netBenefitWithOverrides(overrides){
+    // Uses the same Excel-parity ROI calc
+    const inp = roi_inputs();
+    const o = {...inp, ...overrides};
+    const out = roi_calc(o);
+    return {inp:o, out};
+  }
+
+  function render_breakeven(){
+    try{
+      // Ensure ROI has been run at least once (for context), but allow independent run
+      const axis = document.getElementById("be_axis").value;
+      const minV = parseFloat(document.getElementById("be_min").value);
+      const maxV = parseFloat(document.getElementById("be_max").value);
+      const step = parseFloat(document.getElementById("be_step").value);
+      if(!(maxV > minV) || step <= 0){
+        showErr("Break-even range invalid. Ensure max > min and step > 0.");
+        return;
+      }
+
+      const xs = [];
+      const ys = [];
+      const zeros = [];
+
+      for(let x=minV; x<=maxV+1e-9; x+=step){
+        let overrides = {};
+        if(axis === "trip"){
+          overrides = { trip: x };
+        } else if(axis === "mitig"){
+          overrides = { mitig: clamp(x/100, 0, 1) };
+        } else if(axis === "share"){
+          overrides = { share: clamp(x/100, 0, 1) };
+        }
+        const r = netBenefitWithOverrides(overrides);
+        xs.push(x);
+        ys.push(r.out.net_benefit);
+        zeros.push(0);
+      }
+
+      const ctx = document.getElementById("chart_be");
+      if(!ctx){ showErr("Cannot find break-even canvas (chart_be)."); return; }
+
+      if(__beChart) __beChart.destroy();
+      __beChart = new Chart(ctx, {
+        type:"line",
+        data:{
+          labels: xs.map(v => axis==="trip" ? "$"+Math.round(v) : Math.round(v)+"%"),
+          datasets:[
+            {label:"Net annual benefit", data: ys, tension:.25},
+            {label:"Break-even ($0)", data: zeros, borderDash:[6,6], tension:0}
+          ]
+        },
+        options:{
+          plugins:{legend:{labels:{color:"#2f4556"}}},
+          scales:{
+            x:{ticks:{color:"#2f4556", maxRotation:0, autoSkip:true}, grid:{color:"rgba(11,31,51,.08)"}},
+            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}}
+          }
+        }
+      });
+
+      // Find approximate break-even point (closest to zero crossing)
+      let bePoint = null;
+      for(let i=1;i<ys.length;i++){
+        if((ys[i-1] <= 0 && ys[i] >= 0) || (ys[i-1] >= 0 && ys[i] <= 0)){
+          // linear interpolate
+          const x0 = xs[i-1], x1 = xs[i];
+          const y0 = ys[i-1], y1 = ys[i];
+          const t = (0 - y0) / (y1 - y0 || 1e-9);
+          bePoint = x0 + t*(x1-x0);
+          break;
+        }
+      }
+
+      const base = roi_inputs();
+      const baseOut = roi_calc(base);
+
+      const axisName = axis==="trip" ? "Cost per round trip" : (axis==="mitig" ? "Mitigation rate" : "Transport share");
+      const beText =
+`Break-even explorer (Excel parity)
+
+Current ROI run (base inputs):
+- Net annual benefit: ${fmtMoney(baseOut.net_benefit)}
+- Total program cost: ${fmtMoney(baseOut.total_program_cost)}
+- ROI: ${baseOut.total_program_cost===0 ? "—" : baseOut.roi.toFixed(2)+"x"}
+
+Sweep axis: ${axisName}
+Range: ${minV} to ${maxV} step ${step}
+
+Estimated break-even point:
+${bePoint==null ? "- No crossing in selected range (net stays always above or below $0)." :
+(axis==="trip" ? "- Break-even trip cost ≈ $" + bePoint.toFixed(0) :
+"- Break-even " + axisName.toLowerCase() + " ≈ " + bePoint.toFixed(1) + "%")}
+
+Interpretation (how to use this with stakeholders):
+- If the curve crosses $0 within a realistic range, the program can be positioned as cost-effective under conservative assumptions.
+- If the curve never crosses $0, either increase effectiveness (mitigation), increase transport share (targeting), or reduce trip cost / overhead.`;
+
+      document.getElementById("be_summary").textContent = beText;
+      showOk("Break-even chart updated.");
+    }catch(e){
+      console.error(e);
+      showErr("Break-even error: " + (e?.message || e));
+    }
+  }
+
+  // expose for onclick
+  window.render_breakeven = render_breakeven;
+
   function render_roi(){
     try{
       const inp = roi_inputs();
@@ -1781,6 +1942,16 @@ Generated: ${new Date().toISOString()}`;
   window.autofill_share_from_tier1 = autofill_share_from_tier1;
 
   function wire_roi_parity(){
+    const beAxis = document.getElementById('be_axis');
+    if(beAxis){
+      beAxis.addEventListener('change', ()=>{
+        const v = beAxis.value;
+        if(v==='trip'){ document.getElementById('be_min').value=0; document.getElementById('be_max').value=150; document.getElementById('be_step').value=5; }
+        if(v==='mitig'){ document.getElementById('be_min').value=0; document.getElementById('be_max').value=100; document.getElementById('be_step').value=5; }
+        if(v==='share'){ document.getElementById('be_min').value=0; document.getElementById('be_max').value=100; document.getElementById('be_step').value=5; }
+      });
+    }
+
     const runBtn = document.getElementById("btn_run_roi");
     if(runBtn) runBtn.addEventListener("click", render_roi);
     const autoBtn = document.getElementById("btn_autofill_roi");
