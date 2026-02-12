@@ -1787,6 +1787,7 @@ Outputs:
 
     // Bar chart
     const ctx = document.getElementById("roi_bar");
+    if(!ctx){ showErr("Cannot find ROI chart canvas (roi_bar). Make sure you are on Tier 3 and the page finished loading."); return; }
     if(__roiChart) __roiChart.destroy();
     __roiChart = new Chart(ctx, {
       type:"bar",
@@ -1815,7 +1816,8 @@ Share of total program cost funded by Bank: ${(out.bank_share_cost*100).toFixed(
 
 Narrative-ready summary:
 ${out.narrative}`;
-    document.getElementById("cra_box").textContent = craTxt;
+    const craEl = document.getElementById("cra_box");
+    if(craEl) craEl.textContent = craTxt; else showErr("Cannot find CRA output box (cra_box).");
 
     // Persist for draft generator (state.model)
     state.model = {
@@ -1870,7 +1872,8 @@ CRA impact:
 ${out.narrative}
 
 Generated: ${new Date().toISOString()}`;
-    document.getElementById("roi_audit").textContent = audit;
+    const auditEl = document.getElementById("roi_audit");
+    if(auditEl) auditEl.textContent = audit; else showErr("Cannot find ROI audit box (roi_audit).");
 
     // Targeted mode break-even chart
     const beBox = document.getElementById("breakeven_box");
@@ -1989,7 +1992,7 @@ Generated: ${new Date().toISOString()}`;
       cov.addEventListener("input", ()=>{ covRead.textContent = cov.value + "%"; });
     }
 
-    document.getElementById("btn_run_roi").addEventListener("click", renderROI);
+    document.getElementById("btn_run_roi").addEventListener("click", ()=>{ try { renderROI(); } catch(e){ console.error(e); showErr("ROI run error: " + (e?.message||e)); } });
     document.getElementById("btn_autofill_roi").addEventListener("click", autofillFromCHNA);
 
     const xlsxIn = document.getElementById("roi_xlsx");
