@@ -479,9 +479,9 @@
           </div>
 
           <div class="btnbar" style="margin-top:10px;">
-            <button class="primary" id="btn_generate_draft">Generate Draft</button>
-            <button id="btn_copy_draft">Copy</button>
-            <button class="secondary" id="btn_download_draft">Download .txt</button>
+            <button class="primary" id="btn_generate_draft" onclick="__draftGenerate()">Generate Draft</button>
+            <button id="btn_copy_draft" onclick="__draftCopy()">Copy</button>
+            <button class="secondary" id="btn_download_draft" onclick="__draftDownload()">Download .txt</button>
           </div>
 
           <div class="split" style="margin-top:10px;">
@@ -1957,6 +1957,159 @@ Generated: ${new Date().toISOString()}`;
     const autoBtn = document.getElementById("btn_autofill_roi");
     if(autoBtn) autoBtn.addEventListener("click", autofill_share_from_tier1);
   }
+
+
+
+  // ------------------------------
+  // Resilient Draft UI fallbacks (in case event wiring fails)
+  // ------------------------------
+  window.__draftGenerate = function(){
+    try{
+      const type = document.getElementById("draft_type").value;
+      const kind = document.getElementById("draft_activity").value;
+      const tone = document.getElementById("draft_tone").value;
+      const txt = generateDraft(type, kind, tone);
+      const prev = document.getElementById("draft_preview");
+      if(prev) prev.textContent = txt;
+      if(typeof showOk === "function") showOk("Draft generated.");
+    }catch(e){
+      console.error(e);
+      if(typeof showErr === "function") showErr("Draft generation error: " + (e?.message || e));
+    }
+  };
+
+  window.__draftCopy = async function(){
+    try{
+      const txt = document.getElementById("draft_preview").textContent || "";
+      await navigator.clipboard.writeText(txt);
+      if(typeof showOk === "function") showOk("Draft copied to clipboard.");
+    }catch(e){
+      console.error(e);
+      if(typeof showOk === "function") showOk("Copy failed in this browser. You can manually select the text and copy.");
+    }
+  };
+
+  window.__draftDownload = function(){
+    try{
+      const txt = document.getElementById("draft_preview").textContent || "";
+      const blob = new Blob([txt], {type:"text/plain"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const type = document.getElementById("draft_type").value;
+      a.download = `cra_application_${type}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }catch(e){
+      console.error(e);
+      if(typeof showErr === "function") showErr("Download error: " + (e?.message || e));
+    }
+  };
+
+  // ------------------------------
+  // Tier 2 Break-even preview (uses Tier 3 ROI parity functions)
+  // ------------------------------
+  let __beT2Chart = null;
+  window.render_breakeven_t2 = function(){
+    try{
+      // roi_inputs / roi_calc exist in Tier 3 parity module
+      if(typeof roi_inputs !== "function" || typeof roi_calc !== "function"){
+        if(typeof showErr === "function") showErr("Break-even preview unavailable: ROI functions not loaded.");
+        return;
+      }
+      const axis = document.getElementById("be2_axis").value;
+      const minV = parseFloat(document.getElementById("be2_min").value);
+      const maxV = parseFloat(document.getElementById("be2_max").value);
+      const step = parseFloat(document.getElementById("be2_step").value);
+      if(!(maxV > minV) || step <= 0){
+        if(typeof showErr === "function") showErr("Break-even range invalid. Ensure max > min and step > 0.");
+        return;
+      }
+
+      const base = roi_inputs();
+      const xs = [];
+      const ys = [];
+      const zeros = [];
+
+      for(let x=minV; x<=maxV+1e-9; x+=step){
+        const overrides = {};
+        if(axis==="trip") overrides.trip = x;
+        if(axis==="mitig") overrides.mitig = clamp(x/100, 0, 1);
+        if(axis==="share") overrides.share = clamp(x/100, 0, 1);
+        const out = roi_calc({...base, ...overrides});
+        xs.push(x);
+        ys.push(out.net_benefit);
+        zeros.push(0);
+      }
+
+      const ctx = document.getElementById("chart_be_t2");
+      if(!ctx){
+        if(typeof showErr === "function") showErr("Cannot find Tier 2 break-even canvas (chart_be_t2).");
+        return;
+      }
+
+      if(__beT2Chart) __beT2Chart.destroy();
+      __beT2Chart = new Chart(ctx, {
+        type:"line",
+        data:{
+          labels: xs.map(v => axis==="trip" ? "$"+Math.round(v) : Math.round(v)+"%"),
+          datasets:[
+            {label:"Net annual benefit", data: ys, tension:.25},
+            {label:"Break-even ($0)", data: zeros, borderDash:[6,6], tension:0}
+          ]
+        },
+        options:{
+          plugins:{legend:{labels:{color:"#2f4556"}}},
+          scales:{
+            x:{ticks:{color:"#2f4556", maxRotation:0, autoSkip:true}, grid:{color:"rgba(11,31,51,.08)"}},
+            y:{ticks:{color:"#2f4556"}, grid:{color:"rgba(11,31,51,.08)"}}
+          }
+        }
+      });
+
+      // break-even estimate
+      let bePoint = null;
+      for(let i=1;i<ys.length;i++){
+        if((ys[i-1] <= 0 && ys[i] >= 0) || (ys[i-1] >= 0 && ys[i] <= 0)){
+          const x0 = xs[i-1], x1 = xs[i];
+          const y0 = ys[i-1], y1 = ys[i];
+          const t = (0 - y0) / (y1 - y0 || 1e-9);
+          bePoint = x0 + t*(x1-x0);
+          break;
+        }
+      }
+
+      const axisName = axis==="trip" ? "Cost per round trip" : (axis==="mitig" ? "Mitigation rate" : "Transport share");
+      const summary =
+`Tier 2 break-even preview
+
+Base inputs (from Tier 3 fields, or defaults):
+- Visits: ${base.visits.toLocaleString()}
+- No-show rate: ${(base.noshow*100).toFixed(1)}%
+- Transport share: ${(base.share*100).toFixed(1)}%
+- Mitigation rate: ${(base.mitig*100).toFixed(1)}%
+- Net revenue/visit: $${base.netrev.toFixed(0)}
+- Marginal clinical cost/visit: $${base.margc.toFixed(0)}
+- Trip cost: $${base.trip.toFixed(0)}
+- Overhead: ${(base.over*100).toFixed(1)}%
+
+Sweep: ${axisName}
+${bePoint==null ? "No break-even crossing within the selected range." :
+(axis==="trip" ? "Estimated break-even trip cost ≈ $" + bePoint.toFixed(0) :
+"Estimated break-even " + axisName.toLowerCase() + " ≈ " + bePoint.toFixed(1) + "%")}
+
+Use: set contract targets or define pilot effectiveness requirements.`;
+      const sEl = document.getElementById("be2_summary");
+      if(sEl) sEl.textContent = summary;
+
+      if(typeof showOk === "function") showOk("Tier 2 break-even preview updated.");
+    }catch(e){
+      console.error(e);
+      if(typeof showErr === "function") showErr("Tier 2 break-even error: " + (e?.message || e));
+    }
+  };
 
 </script>
 </body>
