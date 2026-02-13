@@ -170,7 +170,11 @@
     <div class="tabs" aria-label="Navigation tabs">
       <button class="tabbtn active" id="tab_t1" data-view="t1">Tier 1 — Assessment</button>
       <button class="tabbtn" id="tab_t2" data-view="t2">Tier 2 — CRA Readiness</button>
-      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — ROI & Break-even</button>
+      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — ROI & Break-even
+      <button class="tabbtn" id="tab_t4" data-view="t4">Tier 4 — Implementation</button>
+      <button class="tabbtn" id="tab_t5" data-view="t5">Tier 5 — Outcomes</button>
+      <button class="tabbtn" id="tab_t6" data-view="t6">Tier 6 — Evaluation</button>
+</button>
       <button class="tabbtn" id="tab_drafts" data-view="drafts">Application Drafts</button>
 
       <div class="gate">
@@ -474,7 +478,65 @@
 
 
 
-      <!-- Drafts -->
+      
+      <!-- Tier 4 -->
+      <section id="view_t4" class="view">
+        <div class="callout">
+          <div style="font-weight:900;">Tier 4 — Implementation Plan (prototype)</div>
+          <div class="small" style="margin-top:6px;">
+            This tier turns the selected Tier 2 opportunity into an executable plan: roles, timeline, workflow, data capture, and audit artifacts.
+          </div>
+        </div>
+        <div class="card" style="box-shadow:none; margin-top:12px;">
+          <div style="font-weight:900; margin-bottom:6px;">30‑60‑90 Day Implementation Plan</div>
+          <div class="small" style="margin-bottom:10px;">Auto-populated from Tier 2 selection and Tier 3 ROI assumptions when available.</div>
+          <div id="impl_plan" class="codebox" style="min-height:260px;">Run Tier 3 and select an opportunity to generate an implementation plan.</div>
+          <div class="btnbar" style="margin-top:10px;">
+            <button class="secondary" onclick="generate_impl_plan()">Generate plan</button>
+            <button onclick="copy_block('impl_plan')">Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tier 5 -->
+      <section id="view_t5" class="view">
+        <div class="callout">
+          <div style="font-weight:900;">Tier 5 — Outcomes Reporting (prototype)</div>
+          <div class="small" style="margin-top:6px;">
+            This tier defines the reporting package for hospitals and banks: operational outputs, beneficiary counts, CRA metrics, and financial performance updates.
+          </div>
+        </div>
+        <div class="card" style="box-shadow:none; margin-top:12px;">
+          <div style="font-weight:900; margin-bottom:6px;">Quarterly Outcomes Report Template</div>
+          <div class="small" style="margin-bottom:10px;">Includes CRA outputs (LMI trips, AA trips, bank $/LMI trip) and hospital operational KPIs.</div>
+          <div id="outcomes_report" class="codebox" style="min-height:260px;">Run Tier 3 to populate a draft outcomes report template.</div>
+          <div class="btnbar" style="margin-top:10px;">
+            <button class="secondary" onclick="generate_outcomes_report()">Generate report</button>
+            <button onclick="copy_block('outcomes_report')">Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tier 6 -->
+      <section id="view_t6" class="view">
+        <div class="callout">
+          <div style="font-weight:900;">Tier 6 — Evaluation Plan (prototype)</div>
+          <div class="small" style="margin-top:6px;">
+            This tier formalizes evaluation: baseline, comparison approach, data sources, metrics, and governance for continuous improvement and CRA defensibility.
+          </div>
+        </div>
+        <div class="card" style="box-shadow:none; margin-top:12px;">
+          <div style="font-weight:900; margin-bottom:6px;">Evaluation Plan Template</div>
+          <div class="small" style="margin-bottom:10px;">Designed for audit and re-use across projects (NEMT and broader SDOH interventions).</div>
+          <div id="eval_plan" class="codebox" style="min-height:260px;">Generate an evaluation plan using Tier 1 evidence + Tier 2 criteria + Tier 3 assumptions.</div>
+          <div class="btnbar" style="margin-top:10px;">
+            <button class="secondary" onclick="generate_eval_plan()">Generate plan</button>
+            <button onclick="copy_block('eval_plan')">Copy</button>
+          </div>
+        </div>
+      </section>
+
+<!-- Drafts -->
       <section id="view_drafts" class="view">
         <div class="callout">
           <div style="font-weight:900;">CRA Application Draft Generator</div>
@@ -496,6 +558,8 @@
                 <option value="term_sheet">Joint Partnership Term Sheet (working draft)</option>
                 <option value="chna_brief">CHNA Implementation Alignment Brief</option>
                 <option value="monitor_plan">Monitoring & Evidence Plan</option>
+                <option value="pnl">Borrower P&L Statement (Hospital)</option>
+                <option value="proforma_3yr">Project Pro Forma Budget (3-Year)</option>
               </select>
               <div class="small" style="margin-top:6px;">Choose the document you want to generate. Everything is editable after download.</div>
             </div>
@@ -548,6 +612,17 @@
                   <input id="draft_partner" type="text" placeholder="e.g., County Transit / Nonprofit / Ride broker"/>
                 </div>
               </div>
+              <div class="row">
+                <div class="field">
+                  <label>Pro forma growth (%/yr)</label>
+                  <input id="draft_growth" type="number" value="5" min="0" step="0.5"/>
+                </div>
+                <div class="field">
+                  <label>Cost inflation (%/yr)</label>
+                  <input id="draft_infl" type="number" value="3" min="0" step="0.5"/>
+                </div>
+              </div>
+
               <div class="row">
                 <div class="field">
                   <label>Assessment area notes (optional)</label>
@@ -1633,6 +1708,84 @@ Outputs:
 `;
     }
 
+
+    if(draftType==="pnl"){
+      const m = state.model?.outputs;
+      if(!m) return `${header}\nP&L Draft unavailable: Run Tier 3 ROI first.\n`;
+      const baseNet = m.net_benefit;
+      const coding = state.model?.coding?.uplift || 0;
+      const totalNet = state.model?.totalNet ?? (baseNet + coding);
+
+      return `${header}
+Borrower P&L Statement (Hospital) — Annualized (Draft)
+
+Revenue & Contribution:
+- Gross revenue recaptured: ${fmtMoney(m.gross_rev)}
+- Less: Marginal clinical cost: ${fmtMoney(m.marginal_cost)}
+= Contribution margin from recovered visits: ${fmtMoney(m.gross_rev - m.marginal_cost)}
+
+Program Costs:
+- Transportation direct cost: ${fmtMoney(m.transport_cost)}
+- Program overhead cost: ${fmtMoney(m.overhead_cost)}
+= Total program cost: ${fmtMoney(m.total_program_cost)}
+
+Net Operating Result (Base, Excel parity):
+- Net annual benefit: ${fmtMoney(baseNet)}
+
+Optional Coding Layer (if enabled):
+- Coding uplift: ${fmtMoney(coding)}
+- Net incl. coding uplift: ${fmtMoney(totalNet)}
+
+Notes:
+- Base ROI follows Excel-parity incremental margin model.
+- Coding uplift is optional and should be supported by documentation workflows and coding governance.
+`;
+    }
+
+    if(draftType==="proforma_3yr"){
+      const m = state.model?.outputs;
+      if(!m) return `${header}\n3-Year Pro Forma unavailable: Run Tier 3 ROI first.\n`;
+
+      // simple conservative pro forma: allow growth & inflation assumptions (defaults)
+      const growth = parseFloat((document.getElementById("draft_growth")?.value || "5"))/100;
+      const infl = parseFloat((document.getElementById("draft_infl")?.value || "3"))/100;
+
+      const y1_rev = m.gross_rev;
+      const y1_marg = m.marginal_cost;
+      const y1_cost = m.total_program_cost;
+      const y1_net = m.net_benefit;
+
+      const rows = [];
+      for(let yr=1; yr<=3; yr++){
+        const factor = Math.pow(1+growth, yr-1);
+        const costFactor = Math.pow(1+infl, yr-1);
+        const rev = y1_rev * factor;
+        const marg = y1_marg * factor;
+        const prog = y1_cost * costFactor;
+        const net = rev - marg - prog;
+        rows.push({yr, rev, marg, prog, net});
+      }
+
+      const table = rows.map(r=>`Year ${r.yr}: Revenue ${fmtMoney(r.rev)} | Marginal cost ${fmtMoney(r.marg)} | Program cost ${fmtMoney(r.prog)} | Net ${fmtMoney(r.net)}`).join("\n");
+
+      return `${header}
+Project Pro Forma Budget (3-Year) — Draft
+
+Assumptions:
+- Volume/revenue growth on recovered visits: ${(growth*100).toFixed(1)}% / year
+- Program cost inflation: ${(infl*100).toFixed(1)}% / year
+- Base Year 1 values derived from Tier 3 ROI (Excel parity)
+
+3-Year Summary:
+${table}
+
+Interpretation:
+- Year 1 is the conservative base case (spreadsheet parity).
+- Growth reflects program maturation and improved engagement.
+- Inflation reflects vendor and admin cost escalation.
+`;
+    }
+
     // fallback
     return `${header}\nNo draft type selected.\n`;
   }
@@ -1871,6 +2024,131 @@ Generated: ${new Date().toISOString()}`;
       t.addEventListener("change", ()=>{ box.style.display = t.checked ? "block" : "none"; });
     }
   })();
+
+
+  // ------------------------------
+  // Tier 3 Coding layer UX: recompute on toggle/input changes
+  // ------------------------------
+  (function(){
+    const t = document.getElementById("toggle_coding");
+    const box = document.getElementById("coding_box");
+    if(t && box){
+      const sync = ()=>{ box.style.display = t.checked ? "block" : "none"; };
+      sync();
+      t.addEventListener("change", ()=>{ sync(); if(typeof render_roi === "function") render_roi(); });
+      ["z_rate","z_uplift","cpt_rate","cpt_uplift","coding_base"].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.addEventListener("change", ()=>{ if(typeof render_roi === "function") render_roi(); });
+        if(el) el.addEventListener("input", ()=>{ if(typeof render_roi === "function") render_roi(); });
+      });
+    }
+  })();
+
+  // ------------------------------
+  // Tier 4-6 generators (prototype content)
+  // ------------------------------
+  window.copy_block = async function(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const txt = el.textContent || "";
+    try{ await navigator.clipboard.writeText(txt); showOk("Copied."); }catch(e){ showOk("Copy not available; select text manually."); }
+  };
+
+  window.generate_impl_plan = function(){
+    const opp = state.opportunities?.[0];
+    const m = state.model?.outputs;
+    const txt =
+`Implementation Plan (30-60-90)
+
+Selected opportunity: ${opp ? opp.opp : "—"}
+CRA criterion satisfied: ${opp ? opp.criterion : "—"}
+
+0–30 days
+- Confirm target geography and eligible population (LMI method) and document AA attribution.
+- Finalize partner/vendor and service workflow (scheduling, eligibility, ride confirmation, documentation).
+- Build the evidence packet template (contracts, invoices, ride logs, beneficiary counts).
+
+31–60 days
+- Launch pilot; begin weekly operational monitoring.
+- Collect ride logs, completed visits enabled, cancellations/no-shows, and beneficiary ZIP/tract.
+- Produce first monthly report: volumes, costs, and exceptions.
+
+61–90 days
+- Compare baseline vs observed: transport-related no-shows prevented.
+- Adjust workflow; document corrective actions.
+- Produce quarterly outcomes report for CRA file and hospital leadership.
+
+${m ? "\nCurrent ROI baseline:\n- Prevented no-shows: "+Math.round(m.prevented).toLocaleString()+"\n- Net benefit: "+fmtMoney(m.net_benefit) : ""}`;
+    document.getElementById("impl_plan").textContent = txt;
+  };
+
+  window.generate_outcomes_report = function(){
+    const opp = state.opportunities?.[0];
+    const m = state.model?.outputs;
+    const txt =
+`Quarterly Outcomes Report Template
+
+Project: ${opp ? opp.opp : "—"}
+Reporting period: ___________________
+
+Operational Outputs
+- Trips delivered (round trips): ${m ? Math.round(m.trips).toLocaleString() : "—"}
+- Completed visits enabled: ${m ? Math.round(m.prevented).toLocaleString() : "—"}
+- Cancellation rate: _______
+- On-time pickup rate: _______
+
+Beneficiary & Scope (CRA)
+- % LMI: _______   (method: _______)
+- LMI trips: ${m ? Math.round(m.lmi_trips).toLocaleString() : "—"}
+- % within AA: _______
+- AA trips: ${m ? Math.round(m.aa_trips).toLocaleString() : "—"}
+
+Financial (Hospital)
+- Gross revenue recaptured: ${m ? fmtMoney(m.gross_rev) : "—"}
+- Total program cost: ${m ? fmtMoney(m.total_program_cost) : "—"}
+- Net annual benefit (base): ${m ? fmtMoney(m.net_benefit) : "—"}
+
+Narrative
+- Describe responsiveness to documented CHNA need and any adjustments made.
+`;
+    document.getElementById("outcomes_report").textContent = txt;
+  };
+
+  window.generate_eval_plan = function(){
+    const opp = state.opportunities?.[0];
+    const txt =
+`Evaluation Plan Template
+
+1) Purpose
+Evaluate whether the intervention reduces transport-related missed appointments and improves access for the target population.
+
+2) Baseline
+- Baseline no-show rate (overall): _______
+- Transport-attributable no-show share: _______
+- CHNA evidence citations: ${state.findings?.slice(0,3).map(f=>f.evidenceRef).filter(Boolean).join("; ") || "—"}
+
+3) Design
+- Pre/post comparison (baseline period vs intervention period)
+- Stratify by: age group (65–74), LMI status, and geography (AA)
+
+4) Metrics
+- Primary: prevented no-shows, trips delivered, completed visits enabled
+- Secondary: downstream utilization proxies (optional), patient experience, timeliness
+- CRA: LMI trips, AA trips, bank $/LMI trip
+
+5) Data sources
+- Scheduling system, ride logs, billing/RVUs, SDOH screening/Z-codes (if enabled)
+
+6) Governance & cadence
+- Weekly ops huddle, monthly reporting, quarterly executive review
+- Corrective action triggers: missed pickup rate, high cancellations, documentation gaps
+
+7) Deliverables
+- Quarterly outcomes report
+- Year-end evaluation report with lessons learned and scaling recommendation
+`;
+    document.getElementById("eval_plan").textContent = txt;
+  };
 
 </script>
 </body>
