@@ -168,14 +168,15 @@
     <div class="sub">Tier 1: CHNA Materiality • Tier 2: CRA Eligibility & Application Readiness • Tier 3: Total Program Cost & ROI</div>
 
     <div class="tabs" aria-label="Navigation tabs">
-      <button class="tabbtn active" id="tab_t1" data-view="t1">Tier 1 — Materiality</button>
+      <button class="tabbtn active" id="tab_t1" data-view="t1">Tier 1 — Assessment</button>
       <button class="tabbtn" id="tab_t2" data-view="t2">Tier 2 — CRA Readiness</button>
-      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — Cost & ROI
-      <button class="tabbtn" id="tab_drafts" data-view="drafts">Application Drafts</button></button>
+      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — ROI & Break-even</button>
+      <button class="tabbtn" id="tab_drafts" data-view="drafts">Application Drafts</button>
 
       <div class="gate">
         <span class="chip"><span id="gateDot" class="dot"></span> <span id="gateText">Tier 3 locked until Tier 2 score ≥ 60</span></span>
       </div>
+</div>
     </div>
   </div>
 </header>
@@ -338,124 +339,140 @@
         </div>
       </section>
 
+      
+      
       <!-- Tier 3 -->
       <section id="view_t3" class="view">
         <div class="callout">
-          <div style="font-weight:900;">Tier 3 starts with the basic precursor question</div>
+          <div style="font-weight:900;">Tier 3 — NEMT No‑Show ROI (Excel‑Parity) + Coding ROI Layer</div>
           <div class="small" style="margin-top:6px;">
-            <b>How much does the program cost?</b> Tier 3 computes total cost baseline (startup + fixed + variable) and then estimates ROI.
+            The base ROI remains <b>Excel‑parity</b> (no added fixed/startup costs). Optionally activate a <b>Coding ROI Layer</b> to model
+            incremental upside from SDOH ICD‑10 Z‑code documentation and CPT reporting capture associated with improved visit completion and workflow reliability.
           </div>
         </div>
 
         <div class="card" style="box-shadow:none; margin-top:12px;">
-          <div class="row">
-            <div class="field">
-              <label>Activity type</label>
-              <select id="inp_activity">
-                <option value="nmt">Transportation-to-care (NEMT)</option>
-                <option value="food">Food access supports</option>
-                <option value="care">Care navigation / referral infrastructure</option>
-              </select>
-              <div class="small" style="margin-top:6px;">Transportation is always available and auto-selected when it is the top Tier 2 opportunity.</div>
-            </div>
-            <div class="field">
-              <label>Time horizon (months)</label>
-              <select id="inp_months">
-                <option value="12">12</option>
-                <option value="24">24</option>
-                <option value="36">36</option>
-              </select>
+          <div class="callout">
+            <div style="font-weight:900;">Base ROI definition (Excel‑parity)</div>
+            <div class="small" style="margin-top:6px;">
+              <b>Transport no‑shows</b> = Visits × No‑show rate × Transport share<br/>
+              <b>Prevented no‑shows</b> = Transport no‑shows × Mitigation rate<br/>
+              <b>Net benefit</b> = (Prevented × Net revenue) − (Prevented × Marginal clinical cost) − (Prevented × Trip cost × (1 + Overhead rate))
             </div>
           </div>
 
+          <div style="font-weight:900; margin:12px 0 6px;">A) Volume & Access</div>
           <div class="row">
-            <div class="field"><label>Annual touchpoints (appointments)</label><input id="inp_annual" type="number" value="9000" min="0"/></div>
-            <div class="field"><label>Baseline disruption rate (%)</label><input id="inp_base" type="number" value="15" min="0" max="100" step="0.1"/></div>
-            <div class="field"><label>Share attributable to barrier (%)</label><input id="inp_share" type="number" value="25" min="0" max="100" step="0.1"/></div>
-            <div class="field"><label>Reduction in barrier disruptions (%)</label><input id="inp_red" type="number" value="30" min="0" max="100" step="0.1"/></div>
-            <div class="field"><label>Targeted coverage of eligible patients (%) <span class="mono" id="cov_readout">25%</span></label>
-              <input id="inp_cov" type="range" min="5" max="60" step="1" value="25"/>
-              <div class="small" style="margin-top:6px;">Scales the portion of eligible touchpoints receiving NEMT support. Use this to demonstrate break-even via disciplined targeting.</div>
-            </div>
-            <div class="field">
-              <label>Senior-weighted allocation</label>
-              <select id="inp_weight_mode">
-                <option value="weighted" selected>Prioritize seniors (65–74)</option>
-                <option value="flat">Flat allocation (no weighting)</option>
-              </select>
-              <div class="small" style="margin-top:6px;">Weighted allocation increases the share of support directed to seniors (higher documented transportation barrier), improving cost-effectiveness.</div>
-            </div>
-            <div class="field"><label>Seniors share of eligible touchpoints (%)</label>
-              <input id="inp_sen_share" type="number" min="0" max="100" step="1" value="25"/>
-              <div class="small" style="margin-top:6px;">Used to estimate population mix for the break-even curve. Keep conservative; update when local data is available.</div>
-            </div>
-
+            <div class="field"><label>Annual targeted outpatient visits</label><input id="a_visits" type="number" value="40000"/></div>
+            <div class="field"><label>No‑show rate (0.20 or 20)</label><input id="a_noshow" type="number" value="0.20" step="0.01"/></div>
+            <div class="field"><label>Share due to transportation (0.30 or 30)</label><input id="a_share" type="number" value="0.30" step="0.01"/></div>
+            <div class="field"><label>Net revenue per visit ($)</label><input id="a_netrev" type="number" value="225"/></div>
+            <div class="field"><label>Marginal clinical cost per visit ($)</label><input id="a_margc" type="number" value="90"/></div>
           </div>
 
+          <div style="font-weight:900; margin:10px 0;">B) Program Inputs</div>
           <div class="row">
-            <div class="field"><label>Benefit per prevented disruption ($)</label><input id="inp_benefit" type="number" value="120" min="0"/></div>
-            <div class="field"><label>Startup cost (one-time, $)</label><input id="inp_startup" type="number" value="15000" min="0"/></div>
-            <div class="field"><label>Fixed monthly cost ($/mo)</label><input id="inp_fixed" type="number" value="6000" min="0"/></div>
-            <div class="field"><label>Variable unit cost ($/ride/unit)</label><input id="inp_var" type="number" value="35" min="0"/></div>
-            <div class="field"><label>Units per prevented disruption</label><input id="inp_units" type="number" value="1.2" min="0.1" step="0.1"/></div>
+            <div class="field"><label>Mitigation rate (0.50 or 50)</label><input id="b_mitig" type="number" value="0.50" step="0.01"/></div>
+            <div class="field"><label>Trip cost ($)</label><input id="b_trip" type="number" value="60"/></div>
+            <div class="field"><label>Overhead rate (0.10 or 10)</label><input id="b_over" type="number" value="0.10" step="0.01"/></div>
+          </div>
+
+          <div style="font-weight:900; margin:10px 0;">C) CRA Scope (optional for CRA outputs)</div>
+          <div class="row">
+            <div class="field"><label>LMI share (0.90 or 90)</label><input id="c_lmi" type="number" value="0.90" step="0.01"/></div>
+            <div class="field"><label>AA share (1.00 or 100)</label><input id="c_aa" type="number" value="1.00" step="0.01"/></div>
+            <div class="field"><label>Bank annual contribution ($/yr)</label><input id="c_bank" type="number" value="50000"/></div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="callout">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div>
+                <div style="font-weight:900;">Coding ROI Layer (optional)</div>
+                <div class="small" style="margin-top:6px;">
+                  This layer models incremental financial upside from improved coding/documentation capture enabled by visit completion and SDOH workflow reliability.
+                  It does <b>not</b> alter the base Excel-parity ROI; it adds an optional “coding uplift” line item.
+                </div>
+              </div>
+              <div class="chip">
+                <span style="font-weight:900;">Activate</span>
+                <input id="toggle_coding" type="checkbox" style="margin-left:10px; transform:scale(1.2);" />
+              </div>
+            </div>
+
+            <div id="coding_box" style="display:none; margin-top:10px;">
+              <div class="row">
+                <div class="field">
+                  <label>Z‑code documentation capture rate (0–100%)</label>
+                  <input id="z_rate" type="number" value="25" min="0" max="100" step="1"/>
+                  <div class="small" style="margin-top:6px;">Percent of prevented visits where SDOH Z-codes are documented (e.g., Z59.*, Z60.*, Z63.*, Z75.*).</div>
+                </div>
+                <div class="field">
+                  <label>Estimated $ uplift per Z‑coded encounter</label>
+                  <input id="z_uplift" type="number" value="20" min="0" step="1"/>
+                  <div class="small" style="margin-top:6px;">Conservative placeholder (e.g., improved reimbursement capture, care coordination value, risk documentation).</div>
+                </div>
+                <div class="field">
+                  <label>CPT capture uplift rate (0–100%)</label>
+                  <input id="cpt_rate" type="number" value="15" min="0" max="100" step="1"/>
+                  <div class="small" style="margin-top:6px;">Percent of prevented visits where additional coding/quality capture occurs (e.g., Category II reporting, documentation completeness).</div>
+                </div>
+                <div class="field">
+                  <label>Estimated $ uplift per CPT‑captured encounter</label>
+                  <input id="cpt_uplift" type="number" value="15" min="0" step="1"/>
+                  <div class="small" style="margin-top:6px;">Conservative placeholder (e.g., downcoding protection, quality program attribution, operational billing confidence).</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label>Apply coding uplift to</label>
+                  <select id="coding_base">
+                    <option value="prevented" selected>Prevented no‑shows (recovered visits)</option>
+                    <option value="all">All targeted visits (broad workflow uplift)</option>
+                  </select>
+                  <div class="small" style="margin-top:6px;">Default is conservative: apply only to recovered visits.</div>
+                </div>
+                <div class="field">
+                  <label>Notes (optional)</label>
+                  <input id="coding_notes" type="text" placeholder="e.g., Z75.3 transportation barrier documented via screening; CPT II captured for quality reporting."/>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="btnbar" style="margin-top:10px;">
-            <button class="primary" id="btn_run">Run cost & ROI</button>
-            <button class="secondary" id="btn_autofill">Auto-fill from Tier 2</button>
+            <button class="primary" onclick="render_roi()">Run ROI</button>
           </div>
 
           <div class="kpis" style="margin-top:10px;">
-            <div class="kpi">
-              <div class="label">Program cost (annualized)</div>
-              <div class="value" id="kpi_cost">—</div>
-              <div class="hint">Startup + fixed + variable, normalized to annual basis.</div>
-            </div>
-            <div class="kpi">
-              <div class="label">Gross benefit (annualized)</div>
-              <div class="value" id="kpi_gross">—</div>
-              <div class="hint">Prevented disruptions × benefit.</div>
-            </div>
-            <div class="kpi">
-              <div class="label">Net impact (annualized)</div>
-              <div class="value" id="kpi_net">—</div>
-              <div class="hint">Gross minus program cost.</div>
-            </div>
-            <div class="kpi">
-              <div class="label">Audit-ready memo block</div>
-              <div class="small">Generated below (copy/paste).</div>
-            </div>
+            <div class="kpi"><div class="label">Net Annual Benefit (base, Excel‑parity)</div><div class="value" id="o_net">—</div></div>
+            <div class="kpi"><div class="label">Coding uplift (optional)</div><div class="value" id="o_code">—</div></div>
+            <div class="kpi"><div class="label">Net benefit incl. coding uplift</div><div class="value" id="o_total_net">—</div></div>
+            <div class="kpi"><div class="label">ROI incl. coding uplift (x)</div><div class="value" id="o_roi">—</div></div>
           </div>
 
-          <div class="split" style="margin-top:10px;">
+          <div class="split" style="margin-top:12px;">
             <div class="card" style="box-shadow:none;">
-              <div style="font-weight:900; margin-bottom:6px;">Benefits vs costs</div>
-              <canvas id="chart_roi" height="230"></canvas>
+              <div style="font-weight:900; margin-bottom:6px;">ROI decomposition</div>
+              <canvas id="roi_bar" height="260"></canvas>
+              <div class="small" style="margin-top:8px;">Base ROI bars are Excel parity; coding uplift is displayed separately.</div>
             </div>
             <div class="card" style="box-shadow:none;">
-              <div style="font-weight:900; margin-bottom:6px;">Monthly & cumulative net</div>
-              <canvas id="chart_trend" height="230"></canvas>
+              <div style="font-weight:900; margin-bottom:6px;">CRA impact outputs</div>
+              <div id="cra_box" class="codebox" style="min-height:260px;">Run ROI to populate outputs.</div>
             </div>
           </div>
 
           <div class="card" style="box-shadow:none; margin-top:12px;">
-            <div style="font-weight:900; margin-bottom:6px;">Audit-ready output</div>
-            <div id="audit_out" class="codebox"></div>
+            <div style="font-weight:900; margin-bottom:6px;">Audit‑ready output</div>
+            <div id="roi_audit" class="codebox">Run ROI to generate memo output.</div>
           </div>
         </div>
-          <div class="card" style="box-shadow:none; margin-top:12px;">
-            <div style="font-weight:900; margin-bottom:6px;">Break-even explorer (coverage vs net impact)</div>
-            <div class="small" style="margin-bottom:10px;">
-              X-axis: targeted coverage of eligible patients. Y-axis: annual net impact. The break-even point is where the curve crosses $0.
-              Use the <b>Senior-weighted allocation</b> toggle to show how prioritizing seniors shifts the curve upward.
-            </div>
-            <canvas id="chart_breakeven" height="250"></canvas>
-            <div class="small" style="margin-top:8px;">
-              Tip: Move the coverage slider to show the selected coverage point on the curve. This creates an engaging, decision-ready narrative.
-            </div>
-          </div>
-
       </section>
+
+
 
       <!-- Drafts -->
       <section id="view_drafts" class="view">
@@ -1655,6 +1672,205 @@ Outputs:
       URL.revokeObjectURL(url);
     });
   }
+
+
+  function _num(id){
+    const el = document.getElementById(id);
+    if(!el) return 0;
+    let v = parseFloat(el.value);
+    if(isNaN(v)) return 0;
+    return (v > 1) ? v/100 : v; // normalize percent-style
+  }
+
+  function render_roi(){
+    try{
+      const visits = parseFloat(document.getElementById("a_visits").value);
+      const noshow = _num("a_noshow");
+      const share = _num("a_share");
+      const netrev = parseFloat(document.getElementById("a_netrev").value);
+      const margc = parseFloat(document.getElementById("a_margc").value);
+      const mitig = _num("b_mitig");
+      const trip = parseFloat(document.getElementById("b_trip").value);
+      const over = _num("b_over");
+
+      const transport_no_shows = visits * noshow * share;
+      const prevented = transport_no_shows * mitig;
+      const gross_rev = prevented * netrev;
+      const marginal_cost = prevented * margc;
+      const transport_cost = prevented * trip;
+      const overhead_cost = transport_cost * over;
+      const total_cost = transport_cost + overhead_cost;
+      const net = gross_rev - marginal_cost - total_cost;
+      const roi = total_cost === 0 ? 0 : net/total_cost;
+      const be_trip = netrev - margc;
+
+      document.getElementById("o_net").textContent = "$" + net.toLocaleString();
+      document.getElementById("o_cost").textContent = "$" + total_cost.toLocaleString();
+      document.getElementById("o_roi").textContent = roi.toFixed(2) + "x";
+      document.getElementById("o_tripmax").textContent = "$" + be_trip.toFixed(0);
+
+      const ctx = document.getElementById("roi_bar");
+      if(ctx){
+        new Chart(ctx, {
+          type:"bar",
+          data:{
+            labels:["Gross Revenue","Marginal Cost","Program Cost","Net Benefit"],
+            datasets:[{data:[gross_rev,marginal_cost,total_cost,net]}]
+          },
+          options:{plugins:{legend:{display:false}}}
+        });
+      }
+
+    }catch(e){
+      console.error(e);
+      alert("ROI error: " + e.message);
+    }
+  }
+
+
+  function _normRate(x){
+    // Accept decimals (0.2) or percents (20)
+    if(isNaN(x)) return 0;
+    return (x > 1) ? (x/100) : x;
+  }
+
+  function roi_inputs(){
+    const visits = parseFloat(document.getElementById("a_visits").value) || 0;
+    return {
+      visits,
+      noshow: _normRate(parseFloat(document.getElementById("a_noshow").value)),
+      share: _normRate(parseFloat(document.getElementById("a_share").value)),
+      netrev: parseFloat(document.getElementById("a_netrev").value) || 0,
+      margc: parseFloat(document.getElementById("a_margc").value) || 0,
+      mitig: _normRate(parseFloat(document.getElementById("b_mitig").value)),
+      trip: parseFloat(document.getElementById("b_trip").value) || 0,
+      over: _normRate(parseFloat(document.getElementById("b_over").value)),
+      lmi: _normRate(parseFloat(document.getElementById("c_lmi").value)),
+      aa: _normRate(parseFloat(document.getElementById("c_aa").value)),
+      bank: parseFloat(document.getElementById("c_bank").value) || 0
+    };
+  }
+
+  function roi_calc(inp){
+    const transport_no_shows = inp.visits * inp.noshow * inp.share;
+    const prevented = transport_no_shows * inp.mitig;
+    const gross_rev = prevented * inp.netrev;
+    const marginal_cost = prevented * inp.margc;
+    const transport_cost = prevented * inp.trip;
+    const overhead_cost = transport_cost * inp.over;
+    const total_program_cost = transport_cost + overhead_cost;
+    const net_benefit = gross_rev - marginal_cost - total_program_cost;
+    const be_trip_max = inp.netrev - inp.margc;
+
+    const trips = prevented;
+    const lmi_trips = trips * inp.lmi;
+    const aa_trips = trips * inp.aa;
+    const bank_per_lmi = (lmi_trips===0) ? 0 : (inp.bank/lmi_trips);
+    const bank_share_cost = (total_program_cost===0) ? 0 : (inp.bank/total_program_cost);
+
+    const narrative = `Estimated ${Math.round(lmi_trips).toLocaleString()} LMI trips and ${Math.round(trips).toLocaleString()} essential visits enabled annually within the Assessment Area.`;
+    return {transport_no_shows, prevented, gross_rev, marginal_cost, transport_cost, overhead_cost, total_program_cost, net_benefit, be_trip_max,
+            trips, lmi_trips, aa_trips, bank_per_lmi, bank_share_cost, narrative};
+  }
+
+  function coding_uplift(preventedVisits, allVisits){
+    const enabled = document.getElementById("toggle_coding").checked;
+    if(!enabled) return {uplift:0, detail:"Coding layer not enabled."};
+
+    const zRate = _normRate(parseFloat(document.getElementById("z_rate").value));
+    const zUplift = parseFloat(document.getElementById("z_uplift").value) || 0;
+    const cptRate = _normRate(parseFloat(document.getElementById("cpt_rate").value));
+    const cptUplift = parseFloat(document.getElementById("cpt_uplift").value) || 0;
+    const base = document.getElementById("coding_base").value; // prevented | all
+    const n = (base === "all") ? allVisits : preventedVisits;
+
+    const zAdd = n * zRate * zUplift;
+    const cptAdd = n * cptRate * cptUplift;
+    const uplift = zAdd + cptAdd;
+
+    const notes = (document.getElementById("coding_notes").value || "").trim();
+    const detail = `Coding uplift applied to ${base === "all" ? "all targeted visits" : "recovered visits"}:
+- Z-code capture: ${(zRate*100).toFixed(1)}% × $${zUplift.toFixed(0)} = $${zAdd.toFixed(0)}
+- CPT capture: ${(cptRate*100).toFixed(1)}% × $${cptUplift.toFixed(0)} = $${cptAdd.toFixed(0)}
+${notes ? "- Notes: " + notes : ""}`.trim();
+
+    return {uplift, detail};
+  }
+
+  function render_roi(){
+    const inp = roi_inputs();
+    const out = roi_calc(inp);
+
+    // Base KPI outputs (Excel parity)
+    document.getElementById("o_net").textContent = "$" + out.net_benefit.toLocaleString(undefined,{maximumFractionDigits:0});
+    document.getElementById("o_tripmax").textContent = "$" + out.be_trip_max.toFixed(0);
+
+    // Coding uplift (optional)
+    const cu = coding_uplift(out.prevented, inp.visits);
+    document.getElementById("o_code").textContent = "$" + cu.uplift.toLocaleString(undefined,{maximumFractionDigits:0});
+
+    const totalNet = out.net_benefit + cu.uplift;
+    document.getElementById("o_total_net").textContent = "$" + totalNet.toLocaleString(undefined,{maximumFractionDigits:0});
+
+    const roiTotal = (out.total_program_cost===0) ? 0 : (totalNet / out.total_program_cost);
+    document.getElementById("o_roi").textContent = (out.total_program_cost===0) ? "—" : roiTotal.toFixed(2) + "x";
+
+    // Chart
+    const ctx = document.getElementById("roi_bar");
+    if(ctx){
+      new Chart(ctx, {
+        type:"bar",
+        data:{
+          labels:["Gross revenue recaptured","Marginal clinical cost","Total program cost","Base net benefit","Coding uplift","Net incl. coding"],
+          datasets:[{data:[out.gross_rev,out.marginal_cost,out.total_program_cost,out.net_benefit,cu.uplift,totalNet]}]
+        },
+        options:{plugins:{legend:{display:false}}}
+      });
+    }
+
+    // CRA outputs (unchanged)
+    const craTxt =
+`Trips delivered (round trips): ${Math.round(out.trips).toLocaleString()}
+LMI trips: ${Math.round(out.lmi_trips).toLocaleString()}
+AA trips: ${Math.round(out.aa_trips).toLocaleString()}
+
+Bank annual contribution: $${inp.bank.toLocaleString()}
+Bank contribution per LMI trip: $${out.bank_per_lmi.toFixed(0)}
+Share of total program cost funded by Bank: ${(out.bank_share_cost*100).toFixed(1)}%
+
+Narrative-ready summary:
+${out.narrative}`;
+    document.getElementById("cra_box").textContent = craTxt;
+
+    // Audit memo
+    document.getElementById("roi_audit").textContent =
+`Tier 3 — Excel-parity ROI + Coding ROI Layer
+
+Base ROI (Excel parity):
+- Net benefit: $${out.net_benefit.toFixed(0)}
+- Total program cost: $${out.total_program_cost.toFixed(0)}
+- Break-even trip cost max: $${out.be_trip_max.toFixed(0)}
+
+Coding ROI Layer:
+${cu.detail}
+
+Total net (incl. coding): $${totalNet.toFixed(0)}
+ROI incl. coding: ${out.total_program_cost===0 ? "—" : roiTotal.toFixed(2)+"x"}
+
+Generated: ${new Date().toISOString()}`;
+
+    // persist for draft generator
+    state.model = { roi_parity:true, inputs: inp, outputs: out, coding: cu, totalNet, roiTotal };
+  }
+
+
+  (function(){
+    const t = document.getElementById("toggle_coding");
+    const box = document.getElementById("coding_box");
+    if(t && box){
+      t.addEventListener("change", ()=>{ box.style.display = t.checked ? "block" : "none"; });
+    }
+  })();
 
 </script>
 </body>
