@@ -1489,5 +1489,39 @@ ${mdm}
 })();
 </script>
 
+
+<script>
+/* ===== Tab navigation hard-fix ===== */
+(function(){
+  window.setView = function(view){
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    const vv = document.getElementById("view_"+view);
+    if(vv) vv.classList.add("active");
+    document.querySelectorAll(".tabbtn").forEach(b=>b.classList.remove("active"));
+    const tb = document.getElementById("tab_"+view);
+    if(tb) tb.classList.add("active");
+  };
+
+  const map = [
+    ["tab_overview","overview"],
+    ["tab_t1","t1"],
+    ["tab_t2","t2"],
+    ["tab_t3","t3"],
+    ["tab_t4","t4"],
+    ["tab_t5","t5"],
+    ["tab_t6","t6"],
+    ["tab_drafts","drafts"]
+  ];
+  map.forEach(([id,view])=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.onclick = ()=>window.setView(view);
+      // also ensure cursor shows
+      el.style.cursor = "pointer";
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
