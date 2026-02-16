@@ -480,7 +480,40 @@
             </div>
           </div>
 
-          <div class="btnbar" style="margin-top:10px;">
+          
+<div class="callout" style="margin-top:12px;">
+  <div style="font-weight:900;">Financial statement assumptions (optional)</div>
+  <div class="small" style="margin-top:6px;">
+    These expand the incremental P&L and 3-year pro forma into detailed line items. Defaults are conservative placeholders.
+  </div>
+  <div class="row" style="margin-top:10px;">
+    <div class="field"><label>Payer mix — Medicare %</label><input id="pm_medicare" type="number" value="45" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Payer mix — Medicaid %</label><input id="pm_medicaid" type="number" value="20" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Payer mix — Commercial %</label><input id="pm_commercial" type="number" value="30" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Payer mix — Self-pay %</label><input id="pm_selfpay" type="number" value="5" min="0" max="100" step="1"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Reimbursement factor — Medicare</label><input id="rf_medicare" type="number" value="0.90" step="0.05" min="0"/></div>
+    <div class="field"><label>Reimbursement factor — Medicaid</label><input id="rf_medicaid" type="number" value="0.70" step="0.05" min="0"/></div>
+    <div class="field"><label>Reimbursement factor — Commercial</label><input id="rf_commercial" type="number" value="1.20" step="0.05" min="0"/></div>
+    <div class="field"><label>Reimbursement factor — Self-pay</label><input id="rf_selfpay" type="number" value="0.20" step="0.05" min="0"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Marginal cost split — Labor %</label><input id="mc_labor" type="number" value="55" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Marginal cost split — Supplies %</label><input id="mc_supplies" type="number" value="25" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Marginal cost split — Diagnostics %</label><input id="mc_diag" type="number" value="20" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Program admin fixed cost ($/month)</label><input id="prog_fixed_month" type="number" value="2500" min="0" step="100"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Broker/dispatch fee (% of transport direct)</label><input id="prog_broker_pct" type="number" value="8" min="0" max="100" step="1"/></div>
+    <div class="field"><label>Data/reporting cost ($/month)</label><input id="prog_data_month" type="number" value="500" min="0" step="50"/></div>
+    <div class="field"><label>Compliance/audit cost ($/year)</label><input id="prog_compliance_year" type="number" value="4000" min="0" step="250"/></div>
+    <div class="field"><label>Contingency (% of total program cost)</label><input id="prog_cont_pct" type="number" value="3" min="0" max="100" step="1"/></div>
+  </div>
+</div>
+
+<div class="btnbar" style="margin-top:10px;">
+
             <button class="primary" id="btn_gen_draft" type="button" onclick="generateDraft()">Generate Draft</button>
             <button id="btn_copy_draft" type="button" onclick="copyDraft()">Copy</button>
             <button class="secondary" id="btn_dl_draft" type="button" onclick="downloadDraft()">Download .txt</button>
@@ -1236,46 +1269,219 @@ Minimum artifacts:
     }
 
     if(type==="pnl"){
-      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.\n";
-      const contrib = r.gross_rev - r.marginal_cost;
+      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.
+";
+
+      const pm = {
+        medicare: parseFloat(document.getElementById("pm_medicare")?.value||"45"),
+        medicaid: parseFloat(document.getElementById("pm_medicaid")?.value||"20"),
+        commercial: parseFloat(document.getElementById("pm_commercial")?.value||"30"),
+        selfpay: parseFloat(document.getElementById("pm_selfpay")?.value||"5")
+      };
+      const sumPM = pm.medicare+pm.medicaid+pm.commercial+pm.selfpay || 100;
+      pm.medicare/=sumPM; pm.medicaid/=sumPM; pm.commercial/=sumPM; pm.selfpay/=sumPM;
+
+      const rf = {
+        medicare: parseFloat(document.getElementById("rf_medicare")?.value||"0.90"),
+        medicaid: parseFloat(document.getElementById("rf_medicaid")?.value||"0.70"),
+        commercial: parseFloat(document.getElementById("rf_commercial")?.value||"1.20"),
+        selfpay: parseFloat(document.getElementById("rf_selfpay")?.value||"0.20")
+      };
+
+      const mcSplit = {
+        labor: parseFloat(document.getElementById("mc_labor")?.value||"55"),
+        supplies: parseFloat(document.getElementById("mc_supplies")?.value||"25"),
+        diag: parseFloat(document.getElementById("mc_diag")?.value||"20")
+      };
+      const mcSum = mcSplit.labor+mcSplit.supplies+mcSplit.diag || 100;
+      mcSplit.labor/=mcSum; mcSplit.supplies/=mcSum; mcSplit.diag/=mcSum;
+
+      const progFixedMonth = parseFloat(document.getElementById("prog_fixed_month")?.value||"2500");
+      const progDataMonth  = parseFloat(document.getElementById("prog_data_month")?.value||"500");
+      const progComplianceYear = parseFloat(document.getElementById("prog_compliance_year")?.value||"4000");
+      const brokerPct = (parseFloat(document.getElementById("prog_broker_pct")?.value||"8")/100);
+      const contPct   = (parseFloat(document.getElementById("prog_cont_pct")?.value||"3")/100);
+
+      const recovered = r.prevented;
+      const base = r.netrev;
+
+      const rev_medicare = recovered * base * pm.medicare * rf.medicare;
+      const rev_medicaid = recovered * base * pm.medicaid * rf.medicaid;
+      const rev_comm     = recovered * base * pm.commercial * rf.commercial;
+      const rev_selfpay  = recovered * base * pm.selfpay * rf.selfpay;
+      const total_rev = rev_medicare+rev_medicaid+rev_comm+rev_selfpay;
+
+      const total_marg = recovered * r.margc;
+      const c_labor = total_marg * mcSplit.labor;
+      const c_supplies = total_marg * mcSplit.supplies;
+      const c_diag = total_marg * mcSplit.diag;
+
+      const transport_direct = r.transport_cost;
+      const overhead_bucket = r.overhead_cost;
+      const broker_fee = transport_direct * brokerPct;
+      const admin_fixed = progFixedMonth * 12;
+      const data_cost = progDataMonth * 12;
+      const compliance = progComplianceYear;
+
+      const subtotal_program = transport_direct + overhead_bucket + broker_fee + admin_fixed + data_cost + compliance;
+      const contingency = subtotal_program * contPct;
+      const total_program = subtotal_program + contingency;
+
+      const contrib_margin = total_rev - total_marg;
+      const net_operating = contrib_margin - total_program;
+
       return header +
-`Borrower P&L Statement (Hospital) — Annualized (Draft)
+`Incremental Program P&L (Hospital Borrower) — Detailed Annualized Draft
 
-Revenue / Contribution:
-- Gross revenue recaptured: ${fmtMoney(r.gross_rev)}
-- Less: marginal clinical cost: ${fmtMoney(r.marginal_cost)}
-= Contribution margin: ${fmtMoney(contrib)}
+Project: ${proj}
+${partner ? "Implementing partner: "+partner+"
+" : ""}${structureNote ? "Funding structure notes: "+structureNote+"
+" : ""}
 
-Program costs:
-- Transport direct cost: ${fmtMoney(r.transport_cost)}
-- Overhead cost: ${fmtMoney(r.overhead_cost)}
-= Total program cost: ${fmtMoney(r.total_cost)}
+SECTION A — Operating Volumes & Assumptions
+Recovered visits (prevented no-shows): ${Math.round(recovered).toLocaleString()}
+Base net revenue per recovered visit: ${fmtMoney(r.netrev)}
+Marginal clinical cost per recovered visit: ${fmtMoney(r.margc)}
+Trip cost: ${fmtMoney(r.trip)} | Overhead rate: ${(r.over*100).toFixed(1)}%
+Broker fee: ${(brokerPct*100).toFixed(1)}% | Admin: ${fmtMoney(progFixedMonth)}/mo | Data: ${fmtMoney(progDataMonth)}/mo | Compliance: ${fmtMoney(progComplianceYear)}/yr | Contingency: ${(contPct*100).toFixed(1)}%
 
-Net operating result:
-- Net annual benefit: ${fmtMoney(r.net)}
+SECTION B — Net Patient Service Revenue (by payer mix)
+Payer mix (normalized): Medicare ${(pm.medicare*100).toFixed(1)}% | Medicaid ${(pm.medicaid*100).toFixed(1)}% | Commercial ${(pm.commercial*100).toFixed(1)}% | Self-pay ${(pm.selfpay*100).toFixed(1)}%
+Reimbursement factors: Medicare ${rf.medicare.toFixed(2)} | Medicaid ${rf.medicaid.toFixed(2)} | Commercial ${rf.commercial.toFixed(2)} | Self-pay ${rf.selfpay.toFixed(2)}
+
+- Medicare revenue: ${fmtMoney(rev_medicare)}
+- Medicaid revenue: ${fmtMoney(rev_medicaid)}
+- Commercial revenue: ${fmtMoney(rev_comm)}
+- Self-pay revenue: ${fmtMoney(rev_selfpay)}
+= Total net patient service revenue: ${fmtMoney(total_rev)}
+
+SECTION C — Clinical Variable Costs (marginal)
+Cost split: Labor ${(mcSplit.labor*100).toFixed(1)}% | Supplies ${(mcSplit.supplies*100).toFixed(1)}% | Diagnostics ${(mcSplit.diag*100).toFixed(1)}%
+
+- Labor (clinical marginal): ${fmtMoney(c_labor)}
+- Supplies: ${fmtMoney(c_supplies)}
+- Diagnostics: ${fmtMoney(c_diag)}
+= Total clinical variable cost: ${fmtMoney(total_marg)}
+
+SECTION D — Contribution Margin
+= Revenue − clinical variable cost
+= ${fmtMoney(contrib_margin)}
+
+SECTION E — Program Operating Costs (detailed)
+- Transportation direct cost: ${fmtMoney(transport_direct)}
+- Program overhead (ROI overhead bucket): ${fmtMoney(overhead_bucket)}
+- Broker/dispatch fee: ${fmtMoney(broker_fee)}
+- Program administration (fixed): ${fmtMoney(admin_fixed)}
+- Data/reporting (fixed): ${fmtMoney(data_cost)}
+- Compliance/audit: ${fmtMoney(compliance)}
+Subtotal program cost: ${fmtMoney(subtotal_program)}
+- Contingency: ${fmtMoney(contingency)}
+= Total program operating cost: ${fmtMoney(total_program)}
+
+SECTION F — Net Operating Result (incremental)
+= Contribution margin − total program cost
+= ${fmtMoney(net_operating)}
+
+Reference checks
+- Tier 3 ROI net benefit (base parity): ${fmtMoney(r.net)}
+- This P&L expands line items; differences reflect added admin/data/compliance/contingency assumptions.
+
+Audit trail requirements
+- Contracts/invoices/service logs, beneficiary eligibility method, AA attribution method, monthly monitoring + quarterly outcomes reporting.
 `;
     }
 
     if(type==="proforma_3yr"){
-      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.\n";
+      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.
+";
+
+      const growth = (parseFloat(document.getElementById("draft_growth").value||"5")/100);
+      const infl = (parseFloat(document.getElementById("draft_infl").value||"3")/100);
+
+      const progFixedMonth = parseFloat(document.getElementById("prog_fixed_month")?.value||"2500");
+      const progDataMonth  = parseFloat(document.getElementById("prog_data_month")?.value||"500");
+      const progComplianceYear = parseFloat(document.getElementById("prog_compliance_year")?.value||"4000");
+      const brokerPct = (parseFloat(document.getElementById("prog_broker_pct")?.value||"8")/100);
+      const contPct   = (parseFloat(document.getElementById("prog_cont_pct")?.value||"3")/100);
+
+      const baseRecovered = r.prevented;
+      const baseRev = r.gross_rev; // parity gross
+      const baseMarg = r.marginal_cost;
+      const baseTransport = r.transport_cost;
+      const baseOverhead = r.overhead_cost;
+      const baseBroker = baseTransport * brokerPct;
+      const baseAdmin = progFixedMonth * 12;
+      const baseData = progDataMonth * 12;
+      const baseComp = progComplianceYear;
+
       const rows = [];
       for(let yr=1; yr<=3; yr++){
-        const f = Math.pow(1+growth, yr-1);
-        const cf = Math.pow(1+infl, yr-1);
-        const rev = r.gross_rev * f;
-        const marg = r.marginal_cost * f;
-        const cost = r.total_cost * cf;
-        const net = rev - marg - cost;
-        rows.push(`Year ${yr}: Gross rev ${fmtMoney(rev)} | Marg cost ${fmtMoney(marg)} | Program cost ${fmtMoney(cost)} | Net ${fmtMoney(net)}`);
+        const volF = Math.pow(1+growth, yr-1);
+        const costF = Math.pow(1+infl, yr-1);
+
+        const recovered = baseRecovered * volF;
+        const rev = baseRev * volF;
+        const marg = baseMarg * volF;
+
+        const transport = baseTransport * costF;
+        const overhead = baseOverhead * costF;
+        const broker = baseBroker * costF;
+        const admin = baseAdmin * costF;
+        const data = baseData * costF;
+        const comp = baseComp * costF;
+
+        const subtotal = transport + overhead + broker + admin + data + comp;
+        const contingency = subtotal * contPct;
+        const program = subtotal + contingency;
+
+        const contrib = rev - marg;
+        const net = contrib - program;
+
+        rows.push({yr, recovered, rev, marg, contrib, transport, overhead, broker, admin, data, comp, contingency, program, net});
       }
+
+      const md = [
+        "| Year | Recovered visits | Net patient rev | Clinical var cost | Contribution margin | Transport | Overhead | Broker | Admin | Data | Compliance | Contingency | Total program cost | Net benefit |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ...rows.map(x=>`| ${x.yr} | ${Math.round(x.recovered).toLocaleString()} | ${fmtMoney(x.rev)} | ${fmtMoney(x.marg)} | ${fmtMoney(x.contrib)} | ${fmtMoney(x.transport)} | ${fmtMoney(x.overhead)} | ${fmtMoney(x.broker)} | ${fmtMoney(x.admin)} | ${fmtMoney(x.data)} | ${fmtMoney(x.comp)} | ${fmtMoney(x.contingency)} | ${fmtMoney(x.program)} | ${fmtMoney(x.net)} |`)
+      ].join("
+");
+
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const y1 = rows[0];
+      const mtable = [
+        "| Month | Recovered visits | Revenue | Clinical cost | Program cost | Net |",
+        "|---|---:|---:|---:|---:|---:|",
+        ...months.map(mn=>{
+          const rv = y1.recovered/12;
+          const rev = y1.rev/12;
+          const marg = y1.marg/12;
+          const prog = y1.program/12;
+          const net = (rev - marg) - prog;
+          return `| ${mn} | ${Math.round(rv).toLocaleString()} | ${fmtMoney(rev)} | ${fmtMoney(marg)} | ${fmtMoney(prog)} | ${fmtMoney(net)} |`;
+        })
+      ].join("
+");
+
       return header +
-`Project Pro Forma Budget (3-Year) — Draft
+`Project Pro Forma Budget (3-Year) — Detailed Draft
 
-Assumptions:
-- Growth (recovered volume/revenue): ${(growth*100).toFixed(1)}%/yr
-- Cost inflation: ${(infl*100).toFixed(1)}%/yr
+Assumptions
+- Growth in recovered visits/revenue: ${(growth*100).toFixed(1)}% per year
+- Program cost inflation: ${(infl*100).toFixed(1)}% per year
+- Broker fee: ${(brokerPct*100).toFixed(1)}% of transport direct
+- Admin: ${fmtMoney(progFixedMonth)}/mo | Data: ${fmtMoney(progDataMonth)}/mo | Compliance: ${fmtMoney(progComplianceYear)}/yr
+- Contingency: ${(contPct*100).toFixed(1)}%
 
-${rows.join("\n")}
+3-Year Pro Forma (Annualized)
+${md}
+
+Year 1 Monthly Budget Roll-Up
+${mtable}
+
+Notes
+- This pro forma expands program costs beyond parity overhead to support board-ready budgeting.
+- Keep Tier 3 ROI parity as the base case; this is the “fully burdened program” view for approvals.
 `;
     }
 
