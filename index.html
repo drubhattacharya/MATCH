@@ -425,7 +425,79 @@
       <section id="view_t5" class="view"><div class="callout"><div style="font-weight:900;">Tier 5 — Outcomes (prototype)</div><div class="small" style="margin-top:6px;">Template placeholders for pitch.</div></div><div class="card" style="box-shadow:none; margin-top:12px;"><div class="codebox" style="min-height:220px;">(Prototype) Quarterly report templates.</div></div></section>
       <section id="view_t6" class="view"><div class="callout"><div style="font-weight:900;">Tier 6 — Evaluation (prototype)</div><div class="small" style="margin-top:6px;">Template placeholders for pitch.</div></div><div class="card" style="box-shadow:none; margin-top:12px;"><div class="codebox" style="min-height:220px;">(Prototype) Evaluation plan templates.</div></div></section>
 
-      <section id="view_drafts" class="view"><div class="callout"><div style="font-weight:900;">Artifacts (prototype)</div><div class="small" style="margin-top:6px;">Artifacts generator will be reattached after pitch stabilization.</div></div><div class="card" style="box-shadow:none; margin-top:12px;"><div class="codebox" style="min-height:220px;">(Prototype) Application artifacts.</div></div></section>
+      
+      <section id="view_drafts" class="view">
+        <div class="callout">
+          <div style="font-weight:900;">Artifacts Generator (application-ready)</div>
+          <div class="small" style="margin-top:6px;">
+            Drafts are generated locally from deterministic templates using Tier 1 findings, Tier 2 CRA rule-engine inputs, and Tier 3 ROI outputs.
+            No external AI calls are made inside this HTML.
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none; margin-top:12px;">
+          <div class="row">
+            <div class="field">
+              <label>Artifact type</label>
+              <select id="draft_type">
+                <option value="cra_memo">CRA Activity Justification Memo</option>
+                <option value="exam_narrative">Examiner‑Facing Narrative (PE language)</option>
+                <option value="crosswalk">CRA Eligibility Crosswalk Table</option>
+                <option value="term_sheet">Joint Partnership Term Sheet</option>
+                <option value="chna_brief">CHNA Implementation Alignment Brief</option>
+                <option value="monitor_plan">Monitoring & Evidence Plan</option>
+                <option value="pnl">Borrower P&L Statement (Hospital)</option>
+                <option value="proforma_3yr">Project Pro Forma Budget (3‑Year)</option>
+              </select>
+              <div class="small" style="margin-top:6px;">Run Tier 1 and (ideally) Tier 2–3 first so the drafts are populated with real values.</div>
+            </div>
+
+            <div class="field">
+              <label>Project name (optional)</label>
+              <input id="draft_project" type="text" placeholder="e.g., Transportation-to-Care Pilot — 12 months"/>
+            </div>
+
+            <div class="field">
+              <label>Implementing partner (optional)</label>
+              <input id="draft_partner" type="text" placeholder="e.g., County Transit / Nonprofit / Ride broker"/>
+            </div>
+
+            <div class="field">
+              <label>Funding structure notes (optional)</label>
+              <input id="draft_structure" type="text" placeholder="e.g., Bank grant to nonprofit + hospital service agreement"/>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>Pro forma growth (%/yr)</label>
+              <input id="draft_growth" type="number" value="5" min="0" step="0.5"/>
+            </div>
+            <div class="field">
+              <label>Cost inflation (%/yr)</label>
+              <input id="draft_infl" type="number" value="3" min="0" step="0.5"/>
+            </div>
+          </div>
+
+          <div class="btnbar" style="margin-top:10px;">
+            <button class="primary" id="btn_gen_draft" type="button" onclick="generateDraft()">Generate Draft</button>
+            <button id="btn_copy_draft" type="button" onclick="copyDraft()">Copy</button>
+            <button class="secondary" id="btn_dl_draft" type="button" onclick="downloadDraft()">Download .txt</button>
+          </div>
+
+          <div class="split" style="margin-top:12px;">
+            <div class="card" style="box-shadow:none;">
+              <div style="font-weight:900; margin-bottom:6px;">Preview</div>
+              <div id="draft_preview" class="codebox" style="min-height:360px;">Select an artifact type and click Generate Draft.</div>
+            </div>
+            <div class="card" style="box-shadow:none;">
+              <div style="font-weight:900; margin-bottom:6px;">Included sources</div>
+              <div class="codebox" style="min-height:360px;" id="draft_sources">(Tier 1 / Tier 2 / Tier 3 state will appear here after you run them.)</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
     </div>
   </div>
@@ -837,6 +909,8 @@ The institution maintained documentation supporting beneficiary eligibility, ass
     const roi = total_cost===0 ? 0 : net/total_cost;
     const be_trip = netrev - margc;
 
+    state.roi = {visits, noshow, share, netrev, margc, mitig, trip, over, transport_no_shows, prevented, gross_rev, marginal_cost, transport_cost, overhead_cost, total_cost, net, roi, be_trip};
+
     document.getElementById("roi_net").textContent = "$" + Math.round(net).toLocaleString();
     document.getElementById("roi_cost").textContent = "$" + Math.round(total_cost).toLocaleString();
     document.getElementById("roi_x").textContent = (total_cost===0) ? "—" : roi.toFixed(2)+"x";
@@ -1003,6 +1077,235 @@ ROI: ${total_cost===0 ? "—" : roi.toFixed(2)+"x"}`;
   buildAlignTable();
   refreshUrlList();
   renderEvidenceTable();
+
+  // ------- Artifacts generator (deterministic templates) -------
+  function fmtMoney(n){
+    if(n==null || isNaN(n)) return "—";
+    const sign = n < 0 ? "-" : "";
+    const v = Math.abs(n);
+    return sign + "$" + Math.round(v).toLocaleString();
+  }
+
+  function tierSourcesText(){
+    const t1 = state.tier1 || {};
+    const t2 = state.cra?.score || null;
+    const t3 = state.roi || null;
+    const parts = [];
+    parts.push("Tier 1:");
+    parts.push(`- Structural: ${t1.struct ?? "—"}% | Input: ${t1.input ?? "—"}% | Alignment: ${t1.align ?? "—"}% | IRI: ${t1.iri ?? "—"}%`);
+    parts.push("");
+    parts.push("Tier 2:");
+    if(t2){
+      parts.push(`- Total: ${t2.total ?? "—"}% | Eligibility: ${t2.elig ?? "—"}% | Defensibility: ${t2.def ?? "—"}% | Docs: ${t2.docScore ?? "—"}%`);
+      parts.push(`- LMI: ${t2.lmi ?? "—"}% | AA: ${t2.aa ?? "—"}% | Activity: ${t2.activity ?? "—"} | Structure: ${t2.structure ?? "—"}`);
+    } else {
+      parts.push("- Not yet calculated (run Tier 2).");
+    }
+    parts.push("");
+    parts.push("Tier 3:");
+    if(t3){
+      parts.push(`- Net benefit: ${fmtMoney(t3.net)} | Program cost: ${fmtMoney(t3.total_cost)} | ROI: ${t3.total_cost===0 ? "—" : t3.roi.toFixed(2)+"x"}`);
+    } else {
+      parts.push("- Not yet calculated (run Tier 3).");
+    }
+    return parts.join("\n");
+  }
+
+  function generateDraftText(type){
+    const proj = (document.getElementById("draft_project").value || "").trim() || "CHNA–CRA Project";
+    const partner = (document.getElementById("draft_partner").value || "").trim();
+    const structureNote = (document.getElementById("draft_structure").value || "").trim();
+    const growth = (parseFloat(document.getElementById("draft_growth").value||"5")/100);
+    const infl = (parseFloat(document.getElementById("draft_infl").value||"3")/100);
+
+    const t1 = state.tier1 || {};
+    const t2 = state.cra?.score || null;
+    const r = state.roi || null;
+
+    const header = `${proj}\nGenerated: ${new Date().toISOString()}\n\n`;
+    const partnerLine = partner ? `Implementing partner: ${partner}\n` : "";
+    const structLine = structureNote ? `Funding structure notes: ${structureNote}\n` : "";
+
+    const t1Block = `Tier 1 Investment Readiness Index (IRI): ${t1.iri ?? "—"}%\nStructural: ${t1.struct ?? "—"}% | Community input: ${t1.input ?? "—"}% | Alignment: ${t1.align ?? "—"}%\n`;
+    const t2Block = t2 ? `Tier 2 CRA score: ${t2.total}% (Elig ${t2.elig} / Def ${t2.def} / Docs ${t2.docScore})\nLMI target: ${t2.lmi}% | AA target: ${t2.aa}% | Activity: ${t2.activity} | Structure: ${t2.structure}\n`
+                      : `Tier 2 CRA score: (not yet calculated)\n`;
+    const t3Block = r ? `Tier 3 ROI (Excel parity): Net ${fmtMoney(r.net)} | Cost ${fmtMoney(r.total_cost)} | ROI ${(r.total_cost===0) ? "—" : r.roi.toFixed(2)+"x"}\n`
+                      : `Tier 3 ROI: (not yet calculated)\n`;
+
+    const evidenceHint = state.evidence?.length ? `Evidence snippets captured: ${state.evidence.length}\n` : `Evidence snippets captured: 0\n`;
+
+    if(type==="cra_memo"){
+      return header +
+`CRA Activity Justification Memo (Draft)
+
+${partnerLine}${structLine}
+1) Need statement (CHNA/CHIP)
+${t1Block}${evidenceHint}
+
+2) CRA structure and defensibility
+${t2Block}
+
+3) Financial discipline (ROI)
+${t3Block}
+
+4) Documentation package (minimum)
+- CHNA/CHIP excerpts + page references
+- Beneficiary definition (LMI method and/or geography)
+- Assessment area attribution method (ZIP/tract capture)
+- Agreement/MOU/contract
+- Invoices/payments and service logs
+- Monitoring cadence + quarterly reporting template
+`;
+    }
+
+    if(type==="exam_narrative"){
+      return header +
+`Examiner‑Facing Narrative Starter (Draft)
+
+The institution supported a community development activity responsive to documented community needs identified through a CHNA/CHIP process (Tier 1 IRI: ${t1.iri ?? "—"}%).
+The activity was structured to target low‑ or moderate‑income individuals and is attributable to the assessment area through defined beneficiary capture methods.
+The institution maintained an audit trail including agreements, payments, service logs, and monitoring reports.
+
+${t2 ? `Quantification targets: LMI ${t2.lmi}%, AA ${t2.aa}%, documentation readiness ${t2.docScore}%.\n` : "" }
+${r ? `Financial discipline: net annual benefit ${fmtMoney(r.net)} on program cost ${fmtMoney(r.total_cost)}.\n` : "" }
+`;
+    }
+
+    if(type==="crosswalk"){
+      const rows = [];
+      if(t2){
+        rows.push(`| Activity | Structure | LMI% | AA% | Eligibility% | Defensibility% | Docs% | Total% |`);
+        rows.push(`|---|---:|---:|---:|---:|---:|---:|---:|`);
+        rows.push(`| ${t2.activity} | ${t2.structure} | ${t2.lmi} | ${t2.aa} | ${t2.elig} | ${t2.def} | ${t2.docScore} | ${t2.total} |`);
+      } else {
+        rows.push("(Run Tier 2 to populate crosswalk.)");
+      }
+      return header + "CRA Eligibility Crosswalk (Draft)\n\n" + rows.join("\n") + "\n";
+    }
+
+    if(type==="term_sheet"){
+      return header +
+`Joint Partnership Term Sheet (Draft)
+
+Project: ${proj}
+${partnerLine}${structLine}
+Purpose: Address documented access disparity and deliver measurable community development impact.
+
+Key parameters:
+- Tier 1 IRI: ${t1.iri ?? "—"}%
+- CRA posture: ${t2 ? `${t2.total}% (LMI ${t2.lmi}%, AA ${t2.aa}%)` : "Run Tier 2"}
+- ROI posture: ${r ? `${fmtMoney(r.net)} net benefit; ${fmtMoney(r.total_cost)} program cost` : "Run Tier 3"}
+
+Evidence & reporting:
+- Maintain CHNA/CHIP excerpts, service logs, and quarterly outcomes reporting package.
+`;
+    }
+
+    if(type==="chna_brief"){
+      return header +
+`CHNA Implementation Alignment Brief (Draft)
+
+Summary:
+- Tier 1 IRI: ${t1.iri ?? "—"}% (Structural ${t1.struct ?? "—"} / Input ${t1.input ?? "—"} / Alignment ${t1.align ?? "—"})
+- Key opportunity: Transportation-to-care (if indicated by CHNA transport signal)
+
+Recommended next-cycle enhancements:
+- Strengthen written comment documentation
+- Improve prioritization transparency and resource linkage
+- Add explicit monitoring cadence tied to CHIP
+`;
+    }
+
+    if(type==="monitor_plan"){
+      return header +
+`Monitoring & Evidence Plan (Draft)
+
+Cadence:
+- Weekly: operational exceptions (cancellations, delays, no-shows)
+- Monthly: units delivered, beneficiary counts, AA attribution spot-check
+- Quarterly: outcomes reporting for CRA file and hospital leadership
+
+Minimum artifacts:
+- Agreements/invoices/service logs
+- Beneficiary LMI method + AA mapping
+- Quarterly report template
+`;
+    }
+
+    if(type==="pnl"){
+      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.\n";
+      const contrib = r.gross_rev - r.marginal_cost;
+      return header +
+`Borrower P&L Statement (Hospital) — Annualized (Draft)
+
+Revenue / Contribution:
+- Gross revenue recaptured: ${fmtMoney(r.gross_rev)}
+- Less: marginal clinical cost: ${fmtMoney(r.marginal_cost)}
+= Contribution margin: ${fmtMoney(contrib)}
+
+Program costs:
+- Transport direct cost: ${fmtMoney(r.transport_cost)}
+- Overhead cost: ${fmtMoney(r.overhead_cost)}
+= Total program cost: ${fmtMoney(r.total_cost)}
+
+Net operating result:
+- Net annual benefit: ${fmtMoney(r.net)}
+`;
+    }
+
+    if(type==="proforma_3yr"){
+      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.\n";
+      const rows = [];
+      for(let yr=1; yr<=3; yr++){
+        const f = Math.pow(1+growth, yr-1);
+        const cf = Math.pow(1+infl, yr-1);
+        const rev = r.gross_rev * f;
+        const marg = r.marginal_cost * f;
+        const cost = r.total_cost * cf;
+        const net = rev - marg - cost;
+        rows.push(`Year ${yr}: Gross rev ${fmtMoney(rev)} | Marg cost ${fmtMoney(marg)} | Program cost ${fmtMoney(cost)} | Net ${fmtMoney(net)}`);
+      }
+      return header +
+`Project Pro Forma Budget (3-Year) — Draft
+
+Assumptions:
+- Growth (recovered volume/revenue): ${(growth*100).toFixed(1)}%/yr
+- Cost inflation: ${(infl*100).toFixed(1)}%/yr
+
+${rows.join("\n")}
+`;
+    }
+
+    return header + "(Unknown artifact type)\n";
+  }
+
+  function generateDraft(){
+    const type = document.getElementById("draft_type").value;
+    const txt = generateDraftText(type);
+    document.getElementById("draft_preview").textContent = txt;
+    document.getElementById("draft_sources").textContent = tierSourcesText();
+    showOk("Draft generated.");
+  }
+
+  async function copyDraft(){
+    const txt = document.getElementById("draft_preview").textContent || "";
+    try{ await navigator.clipboard.writeText(txt); showOk("Draft copied."); }
+    catch(e){ showOk("Copy not available; select text manually."); }
+  }
+
+  function downloadDraft(){
+    const txt = document.getElementById("draft_preview").textContent || "";
+    const blob = new Blob([txt], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cra_application_draft.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
 </script>
 </body>
 </html>
