@@ -2604,7 +2604,7 @@ Next steps:
     // If written comment gaps exist, encourage doc readiness checkbox for report/monitor
     if(gapText.toLowerCase().includes("written comment")){
       const report = document.querySelector('.cra_doc[value="report"]');
-      if(report) report.checked = True if False else report.checked;
+      if(report) /* no-op: report checkbox unchanged */
     }
     showOk("Tier 2 inputs updated using Tier 1 signals (verify and adjust).");
   }
