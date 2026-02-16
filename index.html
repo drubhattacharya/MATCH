@@ -1523,5 +1523,55 @@ ${mdm}
 })();
 </script>
 
+
+<script>
+/* ===== Post-processing hook: ensure Tier 1 scoring + UI refresh ===== */
+(function(){
+  function hasPdfJs(){ return !!window.pdfjsLib; }
+  function warn(msg){
+    const e = document.getElementById("errbar");
+    if(e){ e.style.display="block"; e.textContent = msg; }
+  }
+  function ok(msg){
+    const o = document.getElementById("okbar");
+    if(o){ o.style.display="block"; o.textContent = msg; }
+  }
+
+  // Warn if pdf.js missing (so user understands why auto-extract may be limited)
+  if(!hasPdfJs()){
+    warn("PDF auto-extraction library (pdf.js) did not load. You can still proceed in Assisted Mode: score rubric items manually and paste excerpts into evidence fields.");
+  }
+
+  // Wrap processFiles so it always triggers Tier 1 recalculation after it finishes.
+  const orig = window.processFiles;
+  if(typeof orig === "function"){
+    window.processFiles = async function(){
+      try{
+        await orig();
+      } catch(e){
+        console.error(e);
+        warn("Process Files failed: " + (e && e.message ? e.message : e));
+        return;
+      }
+      try{
+        if(typeof classifyDocs === "function") classifyDocs();
+        if(typeof prefillRubric === "function") prefillRubric();
+        if(typeof prefillAlignment === "function") prefillAlignment();
+        if(typeof scoreAll === "function") scoreAll();
+        // jump to Tier 1 after processing
+        if(typeof setView === "function") setView("t1");
+        ok("Tier 1 updated. Review scores, then proceed to Tier 2 and Tier 3.");
+      } catch(e){
+        console.error(e);
+        warn("Post-processing update failed: " + (e && e.message ? e.message : e));
+      }
+    };
+    // Re-bind process button onclick to wrapped function
+    const btn = document.getElementById("btn_process");
+    if(btn) btn.onclick = window.processFiles;
+  }
+})();
+</script>
+
 </body>
 </html>
