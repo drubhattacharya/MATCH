@@ -164,7 +164,7 @@
     <!-- LEFT PANEL -->
     <div class="card">
       <div class="btnbar">
-        <button class="primary" id="btn_process">Process Files</button>
+        <button class="primary" id="btn_process" onclick="processFiles()">Process Files</button>
         <button class="secondary" id="btn_demo">Load Demo</button>
         <button id="btn_export">Export JSON</button>
         <button class="danger" id="btn_reset">Reset</button>
@@ -542,13 +542,91 @@
     if(err){ err.style.display="block"; err.textContent = "Script error: " + msg; }
   });
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+} else {
+  const err=document.getElementById("errbar");
+  if(err){ err.style.display="block"; err.textContent = "PDF parser (pdf.js) did not load. This dashboard will run in Assisted Mode: upload files to list them, and paste evidence excerpts into Tier 1 fields. If you want auto-extraction, allow cdnjs.cloudflare.com."; }
+}
+
 
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
   function showErr(msg){ const e=document.getElementById("errbar"); e.style.display="block"; e.textContent = msg; }
   function clearErr(){ const e=document.getElementById("errbar"); e.style.display="none"; e.textContent = ""; }
   function showOk(msg){ const o=document.getElementById("okbar"); o.style.display="block"; o.textContent = msg; }
+
+
+// ---- Robust Process Files (works even if pdf.js is blocked) ----
+async function processFiles(){
+  try{
+    const log = document.getElementById("proc_log");
+    if(log) log.textContent = "";
+    const logln = (s)=>{ if(log) log.textContent += s + "\n"; };
+    const files = Array.from(document.getElementById("file_input")?.files || []);
+    if(!files.length){
+      showErr("No files selected. Please choose one or more PDFs/TXTs.");
+      logln("No files selected.");
+      return;
+    }
+    // Always list files, even if we cannot parse PDFs
+    logln(`Selected ${files.length} file(s):`);
+    files.forEach(f=>logln("• "+f.name));
+    logln("");
+
+    // Reset state
+    if(window.state){
+      state.docs = [];
+      state.evidence = [];
+      state.transport = {overall:null, age6574:null};
+    }
+
+    for(const f of files){
+      const ext = (f.name.split(".").pop()||"").toLowerCase();
+      if(ext === "txt"){
+        const text = await f.text();
+        const doc = {name:f.name, type:"txt", pages:1, textByPage:[text.replace(/\s+/g,' ').trim()]};
+        state.docs.push(doc);
+        if(typeof scanTransportSignals === "function") scanTransportSignals(doc);
+        logln(`✓ Loaded TXT: ${f.name}`);
+        continue;
+      }
+      if(ext === "pdf"){
+        if(!window.pdfjsLib){
+          logln(`⚠ pdf.js not available; cannot auto-extract text from ${f.name}.`);
+          continue;
+        }
+        // parse with existing extractPdfText if available
+        if(typeof extractPdfText === "function"){
+          const parsed = await extractPdfText(f);
+          const doc = {name:f.name, type:"pdf", pages:parsed.pages, textByPage:parsed.textByPage};
+          state.docs.push(doc);
+          if(typeof scanTransportSignals === "function") scanTransportSignals(doc);
+          const chars = doc.textByPage.join(" ").length;
+          logln(`✓ Parsed PDF: ${f.name} (pages=${parsed.pages}, chars=${chars})`);
+          if(chars < 400) logln(`  ⚠ Low extracted text; may be scanned PDF.`);
+        } else {
+          logln(`⚠ PDF parser function missing; cannot parse ${f.name}.`);
+        }
+        continue;
+      }
+      logln(`(skipped unsupported file type): ${f.name}`);
+    }
+
+    // Update counters + render tier outputs if functions exist
+    const dc = document.getElementById("docs_count");
+    if(dc) dc.textContent = String(state.docs.length);
+    if(typeof renderEvidenceTable === "function") renderEvidenceTable();
+    if(typeof classifyDocs === "function") classifyDocs();
+    if(typeof prefillRubricFromText === "function") prefillRubricFromText();
+    if(typeof prefillAlignment === "function") prefillAlignment();
+    if(typeof scoreAll === "function") scoreAll();
+
+    showOk("Processing complete. Go to Tier 1 to review scores and gaps.");
+  }catch(e){
+    console.error(e);
+    showErr("Process Files failed: " + (e?.message || e));
+  }
+}
 
   const state = {
     docs: [],
@@ -1006,7 +1084,7 @@ ROI: ${total_cost===0 ? "—" : roi.toFixed(2)+"x"}`;
     showOk("Demo loaded.");
   });
 
-  document.getElementById("btn_process").addEventListener("click", async ()=>{
+  document.getElementById("btn_process").addEventListener("click", async ()=>{ return processFiles(); /* legacy handler delegated */
     clearErr();
     const log = document.getElementById("proc_log");
     log.textContent = "";
