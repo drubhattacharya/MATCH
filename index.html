@@ -140,14 +140,14 @@
     <div class="sub">Functional pitch build: Tier 1 Assessment → Tier 2 CRA Rule Engine → Tier 3 ROI (Excel parity)</div>
 
     <div class="tabs" aria-label="Navigation tabs">
-      <button class="tabbtn active" id="tab_overview" data-view="overview">Overview</button>
-      <button class="tabbtn" id="tab_t1" data-view="t1">Tier 1 — Assessment</button>
-      <button class="tabbtn" id="tab_t2" data-view="t2">Tier 2 — CRA Rule Engine</button>
-      <button class="tabbtn" id="tab_t3" data-view="t3">Tier 3 — ROI</button>
-      <button class="tabbtn" id="tab_t4" data-view="t4">Tier 4 — Implementation</button>
-      <button class="tabbtn" id="tab_t5" data-view="t5">Tier 5 — Outcomes</button>
-      <button class="tabbtn" id="tab_t6" data-view="t6">Tier 6 — Evaluation</button>
-      <button class="tabbtn" id="tab_drafts" data-view="drafts">Artifacts</button>
+      <button class="tabbtn active" id="tab_overview" data-view="overview" onclick="setView('overview')">Overview</button>
+      <button class="tabbtn" id="tab_t1" data-view="t1" onclick="setView('t1')">Tier 1 — Assessment</button>
+      <button class="tabbtn" id="tab_t2" data-view="t2" onclick="setView('t2')">Tier 2 — CRA Rule Engine</button>
+      <button class="tabbtn" id="tab_t3" data-view="t3" onclick="setView('t3')">Tier 3 — ROI</button>
+      <button class="tabbtn" id="tab_t4" data-view="t4" onclick="setView('t4')">Tier 4 — Implementation</button>
+      <button class="tabbtn" id="tab_t5" data-view="t5" onclick="setView('t5')">Tier 5 — Outcomes</button>
+      <button class="tabbtn" id="tab_t6" data-view="t6" onclick="setView('t6')">Tier 6 — Evaluation</button>
+      <button class="tabbtn" id="tab_drafts" data-view="drafts" onclick="setView('drafts')">Artifacts</button>
 
       <div class="gate">
         <span class="chip"><span id="gateDot" class="dot bad"></span> <span id="gateText">Run Tier 1 to unlock Tier 2/3</span></span>
@@ -427,7 +427,6 @@
       <section id="view_t5" class="view"><div class="callout"><div style="font-weight:900;">Tier 5 — Outcomes (prototype)</div><div class="small" style="margin-top:6px;">Template placeholders for pitch.</div></div><div class="card" style="box-shadow:none; margin-top:12px;"><div class="codebox" style="min-height:220px;">(Prototype) Quarterly report templates.</div></div></section>
       <section id="view_t6" class="view"><div class="callout"><div style="font-weight:900;">Tier 6 — Evaluation (prototype)</div><div class="small" style="margin-top:6px;">Template placeholders for pitch.</div></div><div class="card" style="box-shadow:none; margin-top:12px;"><div class="codebox" style="min-height:220px;">(Prototype) Evaluation plan templates.</div></div></section>
 
-      
       <section id="view_drafts" class="view">
         <div class="callout">
           <div style="font-weight:900;">Artifacts Generator (application-ready)</div>
@@ -500,7 +499,6 @@
         </div>
       </section>
 
-
     </div>
   </div>
 </div>
@@ -513,12 +511,8 @@
     if(err){ err.style.display="block"; err.textContent = "Script error: " + msg; }
   });
 
-  if(!window.pdfjsLib){
-  showErr("PDF engine (pdf.js) did not load. This usually means your network blocked external CDNs. Try opening the file while connected to the internet, or allow cdnjs.cloudflare.com. PDF parsing will not run until pdf.js loads.");
-} else {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-}
-
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
   function showErr(msg){ const e=document.getElementById("errbar"); e.style.display="block"; e.textContent = msg; }
@@ -536,8 +530,6 @@
 
   // ------- PDF parsing helpers -------
   async function extractPdfText(file){
-    if(!window.pdfjsLib){ throw new Error("pdf.js not loaded"); }
-
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
     const numPages = pdf.numPages;
@@ -926,7 +918,6 @@ The institution maintained documentation supporting beneficiary eligibility, ass
 
     const ctx = document.getElementById("roi_chart");
     if(roiChart) roiChart.destroy();
-    if(!window.Chart){ showErr("Chart.js did not load. Allow cdn.jsdelivr.net. ROI chart cannot render."); return; }
     roiChart = new Chart(ctx, {type:"bar",
       data:{labels:["Gross rev","Marginal cost","Program cost","Net benefit"],
       datasets:[{data:[gross_rev,marginal_cost,total_cost,net]}]},
@@ -1081,13 +1072,16 @@ ROI: ${total_cost===0 ? "—" : roi.toFixed(2)+"x"}`;
     lmi.addEventListener("input", ()=> lmiR.textContent = lmi.value + "%");
   })();
 
+  // dependency checks
+  if(!window.pdfjsLib){ showErr("PDF engine (pdf.js) did not load. If you are on a restricted network, cdnjs.cloudflare.com may be blocked. PDF parsing will not work until allowed."); }
+  if(!window.Chart){ showErr("Chart engine (Chart.js) did not load. If you are on a restricted network, cdn.jsdelivr.net may be blocked. Charts will not render until allowed."); }
+
   // init
   buildRubricTable();
   buildAlignTable();
   refreshUrlList();
   renderEvidenceTable();
-
-  // ------- Artifacts generator (deterministic templates) -------
+// ------- Artifacts generator (deterministic templates) -------
   function fmtMoney(n){
     if(n==null || isNaN(n)) return "—";
     const sign = n < 0 ? "-" : "";
@@ -1242,151 +1236,46 @@ Minimum artifacts:
     }
 
     if(type==="pnl"){
-      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.
-";
+      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.\n";
       const contrib = r.gross_rev - r.marginal_cost;
-      const projLine = `Project: ${proj}
-`;
-      const partnerLine2 = partner ? `Implementing partner: ${partner}
-` : "";
-      const structLine2 = structureNote ? `Funding structure notes: ${structureNote}
-` : "";
-
       return header +
-`Borrower P&L Statement (Hospital) — Detailed Annualized Draft
+`Borrower P&L Statement (Hospital) — Annualized (Draft)
 
-${projLine}${partnerLine2}${structLine2}
-SECTION 1 — Executive Summary
-This document provides an annualized pro forma P&L for the borrower (hospital) based on Tier 3 ROI outputs (Excel parity incremental margin model).
-It is formatted for internal approvals and partner discussions. It separates (a) recovered margin, (b) program costs, and (c) optional add-on value streams.
-
-SECTION 2 — Core Operating Assumptions (Tier 3)
-- Annual targeted outpatient visits: ${Math.round(r.visits).toLocaleString()}
-- Baseline no-show rate: ${(r.noshow*100).toFixed(1)}%
-- Transportation-attributable share: ${(r.share*100).toFixed(1)}%
-- Mitigation rate: ${(r.mitig*100).toFixed(1)}%
-- Net revenue per completed visit: ${fmtMoney(r.netrev)}
-- Marginal clinical cost per completed visit: ${fmtMoney(r.margc)}
-- Cost per round trip: ${fmtMoney(r.trip)}
-- Overhead rate: ${(r.over*100).toFixed(1)}%
-
-SECTION 3 — Volume Bridge (Annualized)
-- Transport-related no-shows: ${Math.round(r.transport_no_shows).toLocaleString()}
-- Prevented no-shows (recovered visits): ${Math.round(r.prevented).toLocaleString()}
-
-SECTION 4 — Revenue & Contribution Margin
-A) Gross revenue recaptured
-= Recovered visits × Net revenue per visit
-= ${Math.round(r.prevented).toLocaleString()} × ${fmtMoney(r.netrev)} = ${fmtMoney(r.gross_rev)}
-
-B) Marginal clinical cost
-= Recovered visits × Marginal cost per visit
-= ${Math.round(r.prevented).toLocaleString()} × ${fmtMoney(r.margc)} = ${fmtMoney(r.marginal_cost)}
-
-C) Contribution margin (before NEMT program cost)
-= ${fmtMoney(contrib)}
-
-SECTION 5 — Program Costs
-A) Transportation direct cost
-= Recovered visits × Trip cost
-= ${Math.round(r.prevented).toLocaleString()} × ${fmtMoney(r.trip)} = ${fmtMoney(r.transport_cost)}
-
-B) Overhead cost
-= Transport direct cost × Overhead rate
-= ${fmtMoney(r.transport_cost)} × ${(r.over*100).toFixed(1)}% = ${fmtMoney(r.overhead_cost)}
-
-C) Total program cost
-= ${fmtMoney(r.total_cost)}
-
-SECTION 6 — Net Operating Result
-Net annual benefit
-= Contribution margin − Total program cost
-= ${fmtMoney(contrib)} − ${fmtMoney(r.total_cost)} = ${fmtMoney(r.net)}
-
-ROI (net benefit ÷ program cost): ${(r.total_cost===0) ? "—" : r.roi.toFixed(2)+"x"}
-Break-even trip cost max (before overhead): ${fmtMoney(r.be_trip)}
-
-SECTION 7 — Governance Notes
-- This P&L is incremental and does not allocate unrelated fixed overhead.
-- If a fully allocated view is required, add a separate “Allocated Overhead” schedule (does not change incremental ROI).
-
-SECTION 8 — Documentation & Audit Trail (Hospital + Bank)
-- CHNA/CHIP excerpts and page references
-- Beneficiary eligibility method (LMI/geography) and AA attribution method
-- Partner agreements + invoices/payments + service logs (rides)
-- Monthly exceptions report and quarterly outcomes reporting package
-
-Appendix — Key Annual Figures
+Revenue / Contribution:
 - Gross revenue recaptured: ${fmtMoney(r.gross_rev)}
-- Marginal clinical cost: ${fmtMoney(r.marginal_cost)}
-- Total program cost: ${fmtMoney(r.total_cost)}
+- Less: marginal clinical cost: ${fmtMoney(r.marginal_cost)}
+= Contribution margin: ${fmtMoney(contrib)}
+
+Program costs:
+- Transport direct cost: ${fmtMoney(r.transport_cost)}
+- Overhead cost: ${fmtMoney(r.overhead_cost)}
+= Total program cost: ${fmtMoney(r.total_cost)}
+
+Net operating result:
 - Net annual benefit: ${fmtMoney(r.net)}
 `;
     }
 
     if(type==="proforma_3yr"){
-      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.
-";
-      const growth = (parseFloat(document.getElementById("draft_growth").value||"5")/100);
-      const infl = (parseFloat(document.getElementById("draft_infl").value||"3")/100);
-
+      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.\n";
       const rows = [];
       for(let yr=1; yr<=3; yr++){
         const f = Math.pow(1+growth, yr-1);
         const cf = Math.pow(1+infl, yr-1);
-        const recoveredVisits = r.prevented * f;
-        const grossRev = r.gross_rev * f;
-        const margCost = r.marginal_cost * f;
-        const transportCost = r.transport_cost * cf;
-        const overheadCost = r.overhead_cost * cf;
-        const totalCost = transportCost + overheadCost;
-        const contrib = grossRev - margCost;
-        const net = contrib - totalCost;
-        rows.push({yr, recoveredVisits, grossRev, margCost, contrib, transportCost, overheadCost, totalCost, net});
+        const rev = r.gross_rev * f;
+        const marg = r.marginal_cost * f;
+        const cost = r.total_cost * cf;
+        const net = rev - marg - cost;
+        rows.push(`Year ${yr}: Gross rev ${fmtMoney(rev)} | Marg cost ${fmtMoney(marg)} | Program cost ${fmtMoney(cost)} | Net ${fmtMoney(net)}`);
       }
-
-      const mdTable = [
-        "| Year | Recovered visits | Gross revenue | Marginal clinical cost | Contribution margin | Transport direct cost | Overhead cost | Total program cost | Net benefit |",
-        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
-        ...rows.map(rw => `| ${rw.yr} | ${Math.round(rw.recoveredVisits).toLocaleString()} | ${fmtMoney(rw.grossRev)} | ${fmtMoney(rw.margCost)} | ${fmtMoney(rw.contrib)} | ${fmtMoney(rw.transportCost)} | ${fmtMoney(rw.overheadCost)} | ${fmtMoney(rw.totalCost)} | ${fmtMoney(rw.net)} |`)
-      ].join("
-");
-
-      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      const y1 = rows[0];
-      const monthly = months.map(mn=>{
-        const rv = y1.recoveredVisits/12;
-        const gr = y1.grossRev/12;
-        const mc = y1.margCost/12;
-        const tc = y1.transportCost/12;
-        const oc = y1.overheadCost/12;
-        const net = (gr-mc) - (tc+oc);
-        return {mn, rv, gr, mc, tc, oc, net};
-      });
-      const mdMonthly = [
-        "| Month | Recovered visits | Gross rev | Marg cost | Transport cost | Overhead | Net |",
-        "|---|---:|---:|---:|---:|---:|---:|",
-        ...monthly.map(rw=>`| ${rw.mn} | ${Math.round(rw.rv).toLocaleString()} | ${fmtMoney(rw.gr)} | ${fmtMoney(rw.mc)} | ${fmtMoney(rw.tc)} | ${fmtMoney(rw.oc)} | ${fmtMoney(rw.net)} |`)
-      ].join("
-");
-
       return header +
-`Project Pro Forma Budget (3‑Year) — Detailed Draft
+`Project Pro Forma Budget (3-Year) — Draft
 
-Assumptions
-- Growth in recovered volume/revenue: ${(growth*100).toFixed(1)}% per year
-- Program cost inflation: ${(infl*100).toFixed(1)}% per year
-- Year 1 base derived from Tier 3 Excel‑parity ROI.
+Assumptions:
+- Growth (recovered volume/revenue): ${(growth*100).toFixed(1)}%/yr
+- Cost inflation: ${(infl*100).toFixed(1)}%/yr
 
-3‑Year Pro Forma Summary (Annualized)
-${mdTable}
-
-Year 1 Monthly Roll‑Up (Operational Budget View)
-${mdMonthly}
-
-Notes
-- This pro forma separates recovered contribution margin from program costs.
-- If a fully allocated overhead view is needed, add a separate schedule.
+${rows.join("\n")}
 `;
     }
 
