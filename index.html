@@ -220,7 +220,9 @@
               <tr><td><b>Tier 1</b></td><td>Is the CHNA accountable and investment‑ready (incl. CHNA–CHIP alignment)?</td><td>Scores, gaps, evidence index</td></tr>
               <tr><td><b>Tier 2</b></td><td>Is the activity CRA‑eligible and exam‑defensible?</td><td>Rule engine scores + flags + narrative</td></tr>
               <tr><td><b>Tier 3</b></td><td>Is it financially disciplined and what is break‑even?</td><td>ROI + program cost + CRA outputs</td></tr>
-              <tr><td><b>Tiers 4–6</b></td><td>Implement → report → evaluate</td><td>Templates (prototype)</td></tr>
+              <tr><td><b>Tier 4</b></td><td>How do we operationalize the intervention in 30–90 days with clear roles, workflows, and an audit trail?</td><td>Implementation plan, roles & responsibilities, data capture points</td></tr>
+<tr><td><b>Tier 5</b></td><td>What will we report monthly/quarterly to leadership and CRA examiners to demonstrate reach, scope, outputs, and financial performance?</td><td>Outcomes reporting template, CRA impact package, variance tracking</td></tr>
+<tr><td><b>Tier 6</b></td><td>How will we measure long-term impact, compare against baseline, stratify results, and close the loop for the next CHNA cycle?</td><td>Evaluation plan, baseline metrics, stratification, governance cadence</td></tr>
             </table>
           </div>
         </div>
@@ -511,8 +513,12 @@
     if(err){ err.style.display="block"; err.textContent = "Script error: " + msg; }
   });
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  if(!window.pdfjsLib){
+  showErr("PDF engine (pdf.js) did not load. This usually means your network blocked external CDNs. Try opening the file while connected to the internet, or allow cdnjs.cloudflare.com. PDF parsing will not run until pdf.js loads.");
+} else {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
 
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
   function showErr(msg){ const e=document.getElementById("errbar"); e.style.display="block"; e.textContent = msg; }
@@ -530,6 +536,8 @@
 
   // ------- PDF parsing helpers -------
   async function extractPdfText(file){
+    if(!window.pdfjsLib){ throw new Error("pdf.js not loaded"); }
+
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
     const numPages = pdf.numPages;
@@ -918,6 +926,7 @@ The institution maintained documentation supporting beneficiary eligibility, ass
 
     const ctx = document.getElementById("roi_chart");
     if(roiChart) roiChart.destroy();
+    if(!window.Chart){ showErr("Chart.js did not load. Allow cdn.jsdelivr.net. ROI chart cannot render."); return; }
     roiChart = new Chart(ctx, {type:"bar",
       data:{labels:["Gross rev","Marginal cost","Program cost","Net benefit"],
       datasets:[{data:[gross_rev,marginal_cost,total_cost,net]}]},
