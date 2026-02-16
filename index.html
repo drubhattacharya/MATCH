@@ -1233,46 +1233,151 @@ Minimum artifacts:
     }
 
     if(type==="pnl"){
-      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.\n";
+      if(!r) return header + "Borrower P&L unavailable: Run Tier 3 ROI first.
+";
       const contrib = r.gross_rev - r.marginal_cost;
+      const projLine = `Project: ${proj}
+`;
+      const partnerLine2 = partner ? `Implementing partner: ${partner}
+` : "";
+      const structLine2 = structureNote ? `Funding structure notes: ${structureNote}
+` : "";
+
       return header +
-`Borrower P&L Statement (Hospital) — Annualized (Draft)
+`Borrower P&L Statement (Hospital) — Detailed Annualized Draft
 
-Revenue / Contribution:
+${projLine}${partnerLine2}${structLine2}
+SECTION 1 — Executive Summary
+This document provides an annualized pro forma P&L for the borrower (hospital) based on Tier 3 ROI outputs (Excel parity incremental margin model).
+It is formatted for internal approvals and partner discussions. It separates (a) recovered margin, (b) program costs, and (c) optional add-on value streams.
+
+SECTION 2 — Core Operating Assumptions (Tier 3)
+- Annual targeted outpatient visits: ${Math.round(r.visits).toLocaleString()}
+- Baseline no-show rate: ${(r.noshow*100).toFixed(1)}%
+- Transportation-attributable share: ${(r.share*100).toFixed(1)}%
+- Mitigation rate: ${(r.mitig*100).toFixed(1)}%
+- Net revenue per completed visit: ${fmtMoney(r.netrev)}
+- Marginal clinical cost per completed visit: ${fmtMoney(r.margc)}
+- Cost per round trip: ${fmtMoney(r.trip)}
+- Overhead rate: ${(r.over*100).toFixed(1)}%
+
+SECTION 3 — Volume Bridge (Annualized)
+- Transport-related no-shows: ${Math.round(r.transport_no_shows).toLocaleString()}
+- Prevented no-shows (recovered visits): ${Math.round(r.prevented).toLocaleString()}
+
+SECTION 4 — Revenue & Contribution Margin
+A) Gross revenue recaptured
+= Recovered visits × Net revenue per visit
+= ${Math.round(r.prevented).toLocaleString()} × ${fmtMoney(r.netrev)} = ${fmtMoney(r.gross_rev)}
+
+B) Marginal clinical cost
+= Recovered visits × Marginal cost per visit
+= ${Math.round(r.prevented).toLocaleString()} × ${fmtMoney(r.margc)} = ${fmtMoney(r.marginal_cost)}
+
+C) Contribution margin (before NEMT program cost)
+= ${fmtMoney(contrib)}
+
+SECTION 5 — Program Costs
+A) Transportation direct cost
+= Recovered visits × Trip cost
+= ${Math.round(r.prevented).toLocaleString()} × ${fmtMoney(r.trip)} = ${fmtMoney(r.transport_cost)}
+
+B) Overhead cost
+= Transport direct cost × Overhead rate
+= ${fmtMoney(r.transport_cost)} × ${(r.over*100).toFixed(1)}% = ${fmtMoney(r.overhead_cost)}
+
+C) Total program cost
+= ${fmtMoney(r.total_cost)}
+
+SECTION 6 — Net Operating Result
+Net annual benefit
+= Contribution margin − Total program cost
+= ${fmtMoney(contrib)} − ${fmtMoney(r.total_cost)} = ${fmtMoney(r.net)}
+
+ROI (net benefit ÷ program cost): ${(r.total_cost===0) ? "—" : r.roi.toFixed(2)+"x"}
+Break-even trip cost max (before overhead): ${fmtMoney(r.be_trip)}
+
+SECTION 7 — Governance Notes
+- This P&L is incremental and does not allocate unrelated fixed overhead.
+- If a fully allocated view is required, add a separate “Allocated Overhead” schedule (does not change incremental ROI).
+
+SECTION 8 — Documentation & Audit Trail (Hospital + Bank)
+- CHNA/CHIP excerpts and page references
+- Beneficiary eligibility method (LMI/geography) and AA attribution method
+- Partner agreements + invoices/payments + service logs (rides)
+- Monthly exceptions report and quarterly outcomes reporting package
+
+Appendix — Key Annual Figures
 - Gross revenue recaptured: ${fmtMoney(r.gross_rev)}
-- Less: marginal clinical cost: ${fmtMoney(r.marginal_cost)}
-= Contribution margin: ${fmtMoney(contrib)}
-
-Program costs:
-- Transport direct cost: ${fmtMoney(r.transport_cost)}
-- Overhead cost: ${fmtMoney(r.overhead_cost)}
-= Total program cost: ${fmtMoney(r.total_cost)}
-
-Net operating result:
+- Marginal clinical cost: ${fmtMoney(r.marginal_cost)}
+- Total program cost: ${fmtMoney(r.total_cost)}
 - Net annual benefit: ${fmtMoney(r.net)}
 `;
     }
 
     if(type==="proforma_3yr"){
-      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.\n";
+      if(!r) return header + "3-Year Pro Forma unavailable: Run Tier 3 ROI first.
+";
+      const growth = (parseFloat(document.getElementById("draft_growth").value||"5")/100);
+      const infl = (parseFloat(document.getElementById("draft_infl").value||"3")/100);
+
       const rows = [];
       for(let yr=1; yr<=3; yr++){
         const f = Math.pow(1+growth, yr-1);
         const cf = Math.pow(1+infl, yr-1);
-        const rev = r.gross_rev * f;
-        const marg = r.marginal_cost * f;
-        const cost = r.total_cost * cf;
-        const net = rev - marg - cost;
-        rows.push(`Year ${yr}: Gross rev ${fmtMoney(rev)} | Marg cost ${fmtMoney(marg)} | Program cost ${fmtMoney(cost)} | Net ${fmtMoney(net)}`);
+        const recoveredVisits = r.prevented * f;
+        const grossRev = r.gross_rev * f;
+        const margCost = r.marginal_cost * f;
+        const transportCost = r.transport_cost * cf;
+        const overheadCost = r.overhead_cost * cf;
+        const totalCost = transportCost + overheadCost;
+        const contrib = grossRev - margCost;
+        const net = contrib - totalCost;
+        rows.push({yr, recoveredVisits, grossRev, margCost, contrib, transportCost, overheadCost, totalCost, net});
       }
+
+      const mdTable = [
+        "| Year | Recovered visits | Gross revenue | Marginal clinical cost | Contribution margin | Transport direct cost | Overhead cost | Total program cost | Net benefit |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ...rows.map(rw => `| ${rw.yr} | ${Math.round(rw.recoveredVisits).toLocaleString()} | ${fmtMoney(rw.grossRev)} | ${fmtMoney(rw.margCost)} | ${fmtMoney(rw.contrib)} | ${fmtMoney(rw.transportCost)} | ${fmtMoney(rw.overheadCost)} | ${fmtMoney(rw.totalCost)} | ${fmtMoney(rw.net)} |`)
+      ].join("
+");
+
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const y1 = rows[0];
+      const monthly = months.map(mn=>{
+        const rv = y1.recoveredVisits/12;
+        const gr = y1.grossRev/12;
+        const mc = y1.margCost/12;
+        const tc = y1.transportCost/12;
+        const oc = y1.overheadCost/12;
+        const net = (gr-mc) - (tc+oc);
+        return {mn, rv, gr, mc, tc, oc, net};
+      });
+      const mdMonthly = [
+        "| Month | Recovered visits | Gross rev | Marg cost | Transport cost | Overhead | Net |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+        ...monthly.map(rw=>`| ${rw.mn} | ${Math.round(rw.rv).toLocaleString()} | ${fmtMoney(rw.gr)} | ${fmtMoney(rw.mc)} | ${fmtMoney(rw.tc)} | ${fmtMoney(rw.oc)} | ${fmtMoney(rw.net)} |`)
+      ].join("
+");
+
       return header +
-`Project Pro Forma Budget (3-Year) — Draft
+`Project Pro Forma Budget (3‑Year) — Detailed Draft
 
-Assumptions:
-- Growth (recovered volume/revenue): ${(growth*100).toFixed(1)}%/yr
-- Cost inflation: ${(infl*100).toFixed(1)}%/yr
+Assumptions
+- Growth in recovered volume/revenue: ${(growth*100).toFixed(1)}% per year
+- Program cost inflation: ${(infl*100).toFixed(1)}% per year
+- Year 1 base derived from Tier 3 Excel‑parity ROI.
 
-${rows.join("\n")}
+3‑Year Pro Forma Summary (Annualized)
+${mdTable}
+
+Year 1 Monthly Roll‑Up (Operational Budget View)
+${mdMonthly}
+
+Notes
+- This pro forma separates recovered contribution margin from program costs.
+- If a fully allocated overhead view is needed, add a separate schedule.
 `;
     }
 
